@@ -1170,10 +1170,22 @@ def panggil_pendonor_view(request):
     ).filter(
         tgl_donor_terakhir__lt=seventy_five_days_ago, # Last successful donation was more than 75 days ago
         latest_keputusan_petugas='Lanjut Donor' # Their most recent verification was 'Lanjut Donor'
-    ).order_by('tgl_donor_terakhir')
+    )
+
+    search_query = request.GET.get('search_query')
+    if search_query:
+        pendonor_to_call = pendonor_to_call.filter(
+            Q(nama__icontains=search_query) |
+            Q(no_telepon__icontains=search_query) |
+            Q(golongan_darah__icontains=search_query) |
+            Q(rhesus__icontains=search_query)
+        )
+
+    pendonor_to_call = pendonor_to_call.order_by('tgl_donor_terakhir')
 
     context = {
         'pendonor_to_call': pendonor_to_call,
+        'search_query': search_query,
     }
     return render(request, 'panggil_pendonor.html', context)
 

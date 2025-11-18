@@ -23,7 +23,7 @@
             display: flex;
         }
         #sidebar {
-            width: 300px;
+            width: 200px;
             flex-shrink: 0;
             background-color: white !important;
             padding-top: 1rem;
@@ -93,18 +93,6 @@
                 </a>
                 <a href="{% url 'myapp:uji_saring' %}" class="list-group-item list-group-item-action py-2 ripple {% if request.resolver_match.url_name == 'uji_saring' %}active{% endif %}">
                     <i class="bi bi-search me-3"></i><span>Uji Saring</span>
-                </a>
-                <a href="#" class="list-group-item list-group-item-action py-2 ripple">
-                    <i class="bi bi-box-seam me-3"></i><span>Stok Darah</span>
-                </a>
-                <a href="#" class="list-group-item list-group-item-action py-2 ripple">
-                    <i class="bi bi-box-arrow-in-right me-3"></i><span>Permintaan</span>
-                </a>
-                <a href="#" class="list-group-item list-group-item-action py-2 ripple">
-                    <i class="bi bi-trash me-3"></i><span>Pemusnahan Kantong Darah</span>
-                </a>
-                <a href="#" class="list-group-item list-group-item-action py-2 ripple">
-                    <i class="bi bi-file-earmark-text me-3"></i><span>Laporan</span>
                 </a>
             </div>
         </div>
