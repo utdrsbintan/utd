@@ -1028,7 +1028,9 @@ def generate_donor_pdf(request, verifikasi_id):
         story.append(Spacer(1, 0.2 * inch))
 
     if verifikasi.alasan_tidak_layak:
-        story.append(Paragraph(f"<b>Alasan Tidak Layak:</b> {verifikasi.alasan_tidak_layak.replace('\n', '<br/>')}", styles['Normal']))
+        alasan = verifikasi.alasan_tidak_layak.replace('\\n', '<br/>')
+        story.append(Paragraph(f"<b>Alasan Tidak Layak:</b> {alasan}", styles['Normal']))
+
         story.append(Spacer(1, 0.2 * inch))
 
     story.append(Spacer(1, 0.25 * inch))
