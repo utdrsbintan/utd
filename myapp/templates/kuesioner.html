@@ -1,0 +1,48 @@
+{% extends 'base_no_sidebar.html' %}
+
+{% block content %}
+    <div class="container mt-5 mb-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h4 class="text-center mb-4">Mohon diisi dengan sejujurnya untuk keselamatan Anda <br>Silahkan pilih jawaban sesuai dengan keadaan Anda</h4>
+                        <form method="post">
+                            {% csrf_token %}
+                            {% for field in form %}
+                                {% if field.name == 'riwayat_penyakit_heading' %}
+                                    <h5 class="mt-4 mb-3">{{ field.label }}</h5>
+                                {% elif field.name|slice:":3" == 'q3a' or field.name|slice:":3" == 'q3b' or field.name|slice:":3" == 'q3c' or field.name|slice:":3" == 'q3d' or field.name|slice:":3" == 'q3e' or field.name|slice:":3" == 'q3f' or field.name|slice:":3" == 'q3g' or field.name|slice:":3" == 'q3h' or field.name|slice:":3" == 'q3i' %}
+                                    <div class="mb-3 ms-4">
+                                        <label for="{{ field.id_for_label }}" class="form-label fw-bold">{{ field.label }}</label>
+                                        {{ field }}
+                                        {% if field.help_text %}
+                                            <div class="form-text">{{ field.help_text }}</div>
+                                        {% endif %}
+                                        {% for error in field.errors %}
+                                            <div class="invalid-feedback d-block">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <div class="mb-3">
+                                        <label for="{{ field.id_for_label }}" class="form-label fw-bold">{{ field.label }}</label>
+                                        {{ field }}
+                                        {% if field.help_text %}
+                                            <div class="form-text">{{ field.help_text }}</div>
+                                        {% endif %}
+                                        {% for error in field.errors %}
+                                            <div class="invalid-feedback d-block">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                            <div class="d-grid mt-4">
+                                <button type="submit" class="btn btn-primary">Submit Kuesioner</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

@@ -1,0 +1,125 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard</title>
+    <link rel="icon" href="{% static 'favicon.ico' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            min-height: 100vh;
+            flex-direction: column;
+            font-family: 'Poppins', sans-serif;
+            padding-top: 56px; /* Height of the fixed navbar */
+            padding-bottom: 60px; /* Height of the fixed footer */
+        }
+        #main-content {
+            flex: 1;
+            display: flex;
+        }
+        #sidebar {
+            width: 300px;
+            flex-shrink: 0;
+            background-color: white !important;
+            padding-top: 1rem;
+        }
+        #sidebar .list-group-item span {
+            white-space: nowrap;
+        }
+        #content {
+            flex-grow: 1;
+            padding: 1rem;
+        }
+        .navbar-brand {
+            color: white !important;
+            font-weight: 400;
+            font-family: 'Poppins', sans-serif;
+        }
+        #sidebar .list-group-item {
+            border: none;
+        }
+        #sidebar .list-group-item-action:hover {
+            background-color: #e9ecef;
+        }
+        #sidebar .list-group-item-action.active {
+            background-color: #e9ecef;
+            color: black !important;
+        }
+        .fixed-bottom-footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: #f8f9fa; /* Re-added background color */
+            z-index: 1030; /* Ensure it's above other content, like Bootstrap's navbar */
+        }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top" style="background-color: #A52A2A;">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">Unit Tranfusi Darah RSUD Kabupaten Bintan</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            {% block navbar_right_items %}
+            <li class="nav-item">
+              <a class="nav-link" href="#">Logout</a>
+            </li>
+            {% endblock navbar_right_items %}
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <div id="main-content">
+        {% block main_layout_block %}
+        <div id="sidebar">
+            <div class="list-group">
+                <a href="{% url 'myapp:dashboard' %}" class="list-group-item list-group-item-action py-2 ripple {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <i class="bi bi-speedometer me-3"></i><span>Dashboard</span>
+                </a>
+                <a href="{% url 'myapp:petugas' %}" class="list-group-item list-group-item-action py-2 ripple {% if request.resolver_match.url_name == 'petugas' %}active{% endif %}">
+                    <i class="bi bi-person-badge me-3"></i><span>Petugas</span>
+                </a>
+                <a href="{% url 'myapp:pendonor' %}" class="list-group-item list-group-item-action py-2 ripple {% if request.resolver_match.url_name == 'pendonor' or request.resolver_match.url_name == 'daftar_pendonor' %}active{% endif %}">
+                    <i class="bi bi-people me-3"></i><span>Pendonor</span>
+                </a>
+                <a href="{% url 'myapp:uji_saring' %}" class="list-group-item list-group-item-action py-2 ripple {% if request.resolver_match.url_name == 'uji_saring' %}active{% endif %}">
+                    <i class="bi bi-search me-3"></i><span>Uji Saring</span>
+                </a>
+                <a href="#" class="list-group-item list-group-item-action py-2 ripple">
+                    <i class="bi bi-box-seam me-3"></i><span>Stok Darah</span>
+                </a>
+                <a href="#" class="list-group-item list-group-item-action py-2 ripple">
+                    <i class="bi bi-box-arrow-in-right me-3"></i><span>Permintaan</span>
+                </a>
+                <a href="#" class="list-group-item list-group-item-action py-2 ripple">
+                    <i class="bi bi-trash me-3"></i><span>Pemusnahan Kantong Darah</span>
+                </a>
+                <a href="#" class="list-group-item list-group-item-action py-2 ripple">
+                    <i class="bi bi-file-earmark-text me-3"></i><span>Laporan</span>
+                </a>
+            </div>
+        </div>
+        <div id="content">
+            {% block content %}
+            {% endblock %}
+        </div>
+        {% endblock main_layout_block %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <footer class="text-center text-lg-start py-3 fixed-bottom-footer">
+      <div class="container">
+        <div class="text-center p-3">
+          created by Dewi Alfionita @ 2025
+        </div>
+      </div>
+    </footer>

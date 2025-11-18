@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Riwayat Gagal Donor</h1>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Cari (nama, NIK, gol. darah)" id="searchInput" value="{{ search_query|default:'' }}">
+            </div>
+        </div>
+        <div class="col-md-2">
+            <select class="form-select" id="filterGolonganDarah">
+                <option value="">Golongan Darah</option>
+                {% for gd_value, gd_label in pendonor_golongan_darah_choices %}
+                    <option value="{{ gd_value }}" {% if gd_value == selected_golongan_darah %}selected{% endif %}>{{ gd_label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-1">
+            <select class="form-select" id="filterRhesus">
+                <option value="">Rhesus</option>
+                {% for rh_value, rh_label in pendonor_rhesus_choices %}
+                    <option value="{{ rh_value }}" {% if rh_value == selected_rhesus %}selected{% endif %}>{{ rh_label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-1">
+            <input type="text" class="form-control" id="filterTahun" placeholder="Tahun" value="{{ selected_tahun|default:'' }}">
+        </div>
+        <div class="col-md-1">
+            <select class="form-select" id="filterBulan">
+                <option value="">Bulan</option>
+                {% for month_num, month_name in months %}
+                    <option value="{{ month_num }}" {% if month_num|stringformat:"s" == selected_bulan %}selected{% endif %}>{{ month_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select class="form-select" id="filterJenisKelamin">
+                <option value="">Jenis Kelamin</option>
+                {% for jk_value, jk_label in pendonor_jenis_kelamin_choices %}
+                    <option value="{{ jk_value }}" {% if jk_value == selected_jenis_kelamin %}selected{% endif %}>{{ jk_label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-1">
+            <button class="btn btn-outline-secondary" type="button" id="applyFilterButton">Filter</button>
+        </div>
+    </div>
+
+    <hr class="mb-4">
+
+    <div class="table-responsive mt-4">
+        <table class="table table-striped table-sm">
+            <thead>
+                <tr>
+                    <th scope="col" class="text-center">No</th>
+                    <th scope="col">Nama</th>
+                    <th scope="col" class="text-center">NIK KTP</th>
+                    <th scope="col" class="text-center">Gol Darah</th>
+                    <th scope="col" class="text-center">Rhesus</th>
+                    <th scope="col" class="text-center">No HP</th>
+                    <th scope="col" class="text-center">Tgl Verifikasi</th>
+                    <th scope="col" class="text-center">Alasan</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for verifikasi in gagal_verifikasi %}
+                <tr>
+                    <td class="text-center">{{ forloop.counter }}</td>
+                    <td>{{ verifikasi.pendonor.nama|title }}</td>
+                    <td class="text-center">{{ verifikasi.pendonor.nik_ktp }}</td>
+                    <td class="text-center">{{ verifikasi.pendonor.golongan_darah }}</td>
+                    <td class="text-center">{{ verifikasi.pendonor.rhesus }}</td>
+                    <td class="text-center">{{ verifikasi.pendonor.no_telepon }}</td>
+                    <td class="text-center">{{ verifikasi.display_timestamp }}</td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-warning view-alasan-btn" data-bs-toggle="modal" data-bs-target="#alasanModal" data-nama="{{ verifikasi.pendonor.nama|title }}" data-alasan="{{ verifikasi.alasan_lengkap }}" data-petugas="{{ verifikasi.nama_petugas|default:'-' }}" data-timestamp="{{ verifikasi.display_timestamp }}" data-pdf-id="{{ verifikasi.id }}">
+                            Lihat Alasan
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center">Tidak ada data riwayat gagal donor yang cocok dengan filter.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Alasan Gagal Modal -->
+    <div class="modal fade" id="alasanModal" tabindex="-1" aria-labelledby="alasanModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="alasanModalLabel">Alasan Gagal Donor untuk <span id="alasanDonorName"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="alasanModalBody">
+                    <!-- Alasan content will be loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Filter and Search Logic
+            const searchInput = document.getElementById('searchInput');
+            const filterGolonganDarah = document.getElementById('filterGolonganDarah');
+            const filterRhesus = document.getElementById('filterRhesus');
+            const filterTahun = document.getElementById('filterTahun');
+            const filterBulan = document.getElementById('filterBulan');
+            const filterJenisKelamin = document.getElementById('filterJenisKelamin');
+            const applyFilterButton = document.getElementById('applyFilterButton');
+
+            function applySearchAndFilter() {
+                const currentUrl = new URL(window.location.href);
+                const params = new URLSearchParams();
+
+                const searchQuery = searchInput.value.trim();
+                if (searchQuery) {
+                    params.append('search_query', searchQuery);
+                }
+
+                const selectedGolonganDarah = filterGolonganDarah.value;
+                if (selectedGolonganDarah) {
+                    params.append('golongan_darah', selectedGolonganDarah);
+                }
+                const selectedRhesus = filterRhesus.value;
+                if (selectedRhesus) {
+                    params.append('rhesus', selectedRhesus);
+                }
+                const selectedTahun = filterTahun.value;
+                if (selectedTahun) {
+                    params.append('tahun', selectedTahun);
+                }
+                const selectedBulan = filterBulan.value;
+                if (selectedBulan) {
+                    params.append('bulan', selectedBulan);
+                }
+                const selectedJenisKelamin = filterJenisKelamin.value;
+                if (selectedJenisKelamin) {
+                    params.append('jenis_kelamin', selectedJenisKelamin);
+                }
+
+                currentUrl.search = params.toString();
+                window.location.href = currentUrl.toString();
+            }
+
+            applyFilterButton.addEventListener('click', applySearchAndFilter);
+
+            searchInput.addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    applySearchAndFilter();
+                }
+            });
+
+            // Modal Logic
+            const alasanModal = document.getElementById('alasanModal');
+            alasanModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const nama = button.getAttribute('data-nama');
+                const alasan = button.getAttribute('data-alasan');
+                const petugas = button.getAttribute('data-petugas');
+                const timestamp = button.getAttribute('data-timestamp');
+                const pdfId = button.getAttribute('data-pdf-id');
+
+                const modalTitle = alasanModal.querySelector('.modal-title #alasanDonorName');
+                const modalBody = alasanModal.querySelector('.modal-body');
+
+                modalTitle.textContent = nama;
+                modalBody.innerHTML = `
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">No</th>
+                                    <th class="text-center">Tanggal, Waktu</th>
+                                    <th class="text-center">Alasan</th>
+                                    <th class="text-center">Petugas</th>
+                                    <th class="text-center">Lampiran</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="text-center">1</td>
+                                    <td>
+                                        ${new Date(timestamp).toLocaleDateString('id-ID', { dateStyle: 'long' })}<br>
+                                        Pukul ${new Date(timestamp).toLocaleTimeString('id-ID', { timeStyle: 'short' })} WIB
+                                    </td>
+                                    <td>${alasan}</td>
+                                    <td>${petugas}</td>
+                                    <td class="text-center">
+                                        <a href="/generate-pdf/${pdfId}/" class="btn btn-sm btn-outline-danger" target="_blank">
+                                            <i class="bi bi-file-earmark-pdf"></i> PDF
+                                        </a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            });
+        });
+    </script>
+{% endblock %}

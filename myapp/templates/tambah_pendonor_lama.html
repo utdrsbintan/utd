@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2 text-center">Tambah Data Pendonor</h1>
+    </div>
+
+    <div class="container col-md-8 mx-auto bg-light p-4 rounded">
+        <form id="pendonorLamaForm" method="post" class="needs-validation" novalidate>
+            {% csrf_token %}
+            {{ form.errors }}
+            
+            <div class="mb-3">
+                {{ form.nama.label_tag }}
+                {{ form.nama }}
+                <div class="invalid-feedback">
+                    Nama wajib diisi.
+                </div>
+            </div>
+            <div class="mb-3">
+                {{ form.tanggal_lahir.label_tag }}
+                {{ form.tanggal_lahir }}
+                <div class="invalid-feedback">
+                    Tanggal Lahir wajib diisi.
+                </div>
+            </div>
+            <div class="mb-3">
+                {{ form.nik_ktp.label_tag }}
+                {{ form.nik_ktp }}
+                <div class="invalid-feedback">
+                    NIK KTP wajib diisi.
+                </div>
+            </div>
+            <div class="mb-3">
+                {{ form.jenis_kelamin.label_tag }}
+                {{ form.jenis_kelamin }}
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    {{ form.golongan_darah.label_tag }}
+                    {{ form.golongan_darah }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.rhesus.label_tag }}
+                    {{ form.rhesus }}
+                </div>
+            </div>
+            <div class="mb-3">
+                {{ form.pekerjaan.label_tag }}
+                {{ form.pekerjaan }}
+            </div>
+            <div class="mb-3">
+                {{ form.alamat_rumah.label_tag }}
+                {{ form.alamat_rumah }}
+            </div>
+            <div class="mb-3">
+                {{ form.no_telepon.label_tag }}
+                {{ form.no_telepon }}
+            </div>
+            <div class="mb-3">
+                {{ form.tgl_donor_terakhir.label_tag }}
+                {{ form.tgl_donor_terakhir }}
+            </div>
+            
+            <hr class="my-4">
+
+            <div class="text-end">
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#verifikasiModal">
+                    Lanjut
+                </button>
+            </div>
+
+            <!-- Verifikasi Modal -->
+            <div class="modal fade" id="verifikasiModal" tabindex="-1" aria-labelledby="verifikasiModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-light">
+                                            <h5 class="modal-title" id="verifikasiModalLabel">Verifikasi</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="row">
+                                                <div class="col-md-6 mb-3">
+                                                    {{ form.jenis_donasi.label_tag }}
+                                                    {{ form.jenis_donasi }}
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    {{ form.jenis_donor.label_tag }}
+                                                    {{ form.jenis_donor }}
+                                                </div>
+                                            </div>
+                
+                                            <div class="row">
+                                                <div class="col-md-4 mb-3">
+                                                    {{ form.hb_value.label_tag }}
+                                                    {{ form.hb_value }}
+                                                </div>
+                                                <div class="col-md-4 mb-3">
+                                                    {{ form.berat_badan.label_tag }}
+                                                    {{ form.berat_badan }}
+                                                </div>
+                                                <div class="col-md-4 mb-3">
+                                                    {{ form.tensi.label_tag }}
+                                                    {{ form.tensi }}
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-4 mb-3">
+                                                    {{ form.nomor_kantong.label_tag }}
+                                                    {{ form.nomor_kantong }}
+                                                </div>
+                                                <div class="col-md-4 mb-3">
+                                                    {{ form.jenis_kantong.label_tag }}
+                                                    {{ form.jenis_kantong }}
+                                                </div>
+                                                <div class="col-md-4 mb-3">
+                                                    {{ form.diambil_sebanyak.label_tag }}
+                                                    {{ form.diambil_sebanyak }}
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-6 mb-3">
+                                                    {{ form.pengambilan.label_tag }}
+                                                    {{ form.pengambilan }}
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    {{ form.reaksi_donor.label_tag }}
+                                                    {{ form.reaksi_donor }}
+                                                </div>
+                                            </div>
+                                            <div class="mb-3" id="stopCcContainer" style="display: none;">
+                                                {{ form.stop_cc.label_tag }}
+                                                {{ form.stop_cc }}
+                                            </div>
+                                            <div class="mb-3">
+                                                {{ form.petugas_aftap.label_tag }}
+                                                {{ form.petugas_aftap }}
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button id="savePendonorBtn" class="btn btn-primary" type="submit">Simpan</button>
+                                        </div>
+                                    </div>
+                                </div>
+            </div>
+        </form>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Styling and Capitalization ---
+        const formFields = document.querySelectorAll('input, select, textarea');
+        formFields.forEach(field => {
+            if (field.type !== 'checkbox') {
+                field.classList.add('form-control');
+            }
+        });
+
+        function capitalizeWords(str) {
+            return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+        }
+
+        const namaInput = document.getElementById('id_nama');
+        const alamatInput = document.getElementById('id_alamat_rumah');
+
+        if (namaInput) {
+            namaInput.addEventListener('input', function() {
+                const start = this.selectionStart, end = this.selectionEnd;
+                this.value = capitalizeWords(this.value);
+                this.setSelectionRange(start, end);
+            });
+        }
+
+        if (alamatInput) {
+            alamatInput.addEventListener('input', function() {
+                const start = this.selectionStart, end = this.selectionEnd;
+                this.value = capitalizeWords(this.value);
+                this.setSelectionRange(start, end);
+            });
+        }
+
+
+
+        const pengambilanSelect = document.getElementById('id_pengambilan');
+        const stopCcContainer = document.getElementById('stopCcContainer');
+        const stopCcInput = document.getElementById('id_stop_cc'); // Get the input element
+
+        function toggleStopCc() {
+            if (pengambilanSelect.value === 'Stop') {
+                stopCcContainer.style.display = 'block';
+                stopCcInput.setAttribute('required', 'required'); // Make it required
+            } else {
+                stopCcContainer.style.display = 'none';
+                stopCcInput.removeAttribute('required'); // Remove required
+            }
+        }
+
+        if (pengambilanSelect) {
+            pengambilanSelect.addEventListener('change', toggleStopCc);
+            // Initial call to set correct visibility on page load
+            toggleStopCc();
+        }
+    });
+    </script>
+
+{% endblock %}

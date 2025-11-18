@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulir Pendonor</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="d-flex flex-column min-vh-100">
+    <div class="container mt-3">
+        <h1>Formulir Pendonor</h1>
+        <form method="post">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.nama.id_for_label }}" class="form-label">{{ form.nama.label }}</label>
+                    {{ form.nama }}
+                    {% if form.nama.help_text %}
+                        <div class="form-text">{{ form.nama.help_text }}</div>
+                    {% endif %}
+                    {% for error in form.nama.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.nik_ktp.id_for_label }}" class="form-label">{{ form.nik_ktp.label }}</label>
+                    {{ form.nik_ktp }}
+                    {% if form.nik_ktp.help_text %}
+                        <div class="form-text">{{ form.nik_ktp.help_text }}</div>
+                    {% endif %}
+                    {% for error in form.nik_ktp.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12 mb-3">
+                    <label for="{{ form.alamat_rumah.id_for_label }}" class="form-label">{{ form.alamat_rumah.label }}</label>
+                    {{ form.alamat_rumah }}
+                    {% if form.alamat_rumah.help_text %}
+                        <div class="form-text">{{ form.alamat_rumah.help_text }}</div>
+                    {% endif %}
+                    {% for error in form.alamat_rumah.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.kelurahan.id_for_label }}" class="form-label">{{ form.kelurahan.label }}</label>
+                    {{ form.kelurahan }}
+                    {% if form.kelurahan.help_text %}
+                        <div class="form-text">{{ form.kelurahan.help_text }}</div>
+                    {% endif %}
+                    {% for error in form.kelurahan.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.kecamatan.id_for_label }}" class="form-label">{{ form.kecamatan.label }}</label>
+                    {{ form.kecamatan }}
+                    {% if form.kecamatan.help_text %}
+                        <div class="form-text">{{ form.kecamatan.help_text }}</div>
+                    {% endif %}
+                    {% for error in form.kecamatan.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.pekerjaan.id_for_label }}" class="form-label">{{ form.pekerjaan.label }}</label>
+                    {{ form.pekerjaan }}
+                    {% if form.pekerjaan.help_text %}
+                        <div class="form-text">{{ form.pekerjaan.help_text }}</div>
+                    {% endif %}
+                    {% for error in form.pekerjaan.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.no_telepon.id_for_label }}" class="form-label">{{ form.no_telepon.label }}</label>
+                    {{ form.no_telepon }}
+                    {% if form.no_telepon.help_text %}
+                        <div class="form-text">{{ form.no_telepon.help_text }}</div>
+                    {% endif %}
+                    {% for error in form.no_telepon.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.golongan_darah.id_for_label }}" class="form-label">{{ form.golongan_darah.label }}</label>
+                    {{ form.golongan_darah }}
+                    {% if form.golongan_darah.help_text %}
+                        <div class="form-text">{{ form.golongan_darah.help_text }}</div>
+                    {% endif %}
+                    {% for error in form.golongan_darah.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.rhesus.id_for_label }}" class="form-label">{{ form.rhesus.label }}</label>
+                    {{ form.rhesus }}
+                    {% if form.rhesus.help_text %}
+                        <div class="form-text">{{ form.rhesus.help_text }}</div>
+                    {% endif %}
+                    {% for error in form.rhesus.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.tanggal_lahir.id_for_label }}" class="form-label">{{ form.tanggal_lahir.label }}</label>
+                    {{ form.tanggal_lahir }}
+                    {% if form.tanggal_lahir.help_text %}
+                        <div class="form-text">{{ form.tanggal_lahir.help_text }}</div>
+                    {% endif %}
+                    {% for error in form.tanggal_lahir.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.jenis_kelamin.id_for_label }}" class="form-label">{{ form.jenis_kelamin.label }}</label>
+                    {{ form.jenis_kelamin }}
+                    {% if form.jenis_kelamin.help_text %}
+                        <div class="form-text">{{ form.jenis_kelamin.help_text }}</div>
+                    {% endif %}
+                    {% for error in form.jenis_kelamin.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.tanggal_donor_terakhir.id_for_label }}" class="form-label">{{ form.tanggal_donor_terakhir.label }}</label>
+                    {{ form.tanggal_donor_terakhir }}
+                    {% if form.tanggal_donor_terakhir.help_text %}
+                        <div class="form-text">{{ form.tanggal_donor_terakhir.help_text }}</div>
+                    {% endif %}
+                    {% for error in form.tanggal_donor_terakhir.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.donor_ke.id_for_label }}" class="form-label">{{ form.donor_ke.label }}</label>
+                    {{ form.donor_ke }}
+                    {% if form.donor_ke.help_text %}
+                        <div class="form-text">{{ form.donor_ke.help_text }}</div>
+                    {% endif %}
+                    {% for error in form.donor_ke.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Simpan</button>
+        </form>
+    </div>
+
+    <footer class="footer mt-auto py-3 bg-light">
+        <div class="container text-center">
+            <span class="text-muted">created by Dewi Alfionita @ 2025</span>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

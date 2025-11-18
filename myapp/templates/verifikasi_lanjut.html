@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="container mt-4">
+        <h2>Pemeriksaan Fisik Lanjutan untuk {{ pendonor.nama }}</h2>
+        
+        {% if form.instance.alasan_tidak_layak %}
+            <div class="alert alert-warning">
+                <strong>Alasan dari Kuesioner:</strong>
+                <pre>{{ form.instance.alasan_tidak_layak }}</pre>
+            </div>
+        {% endif %}
+
+        <form method="post" class="needs-validation" novalidate>
+            {% csrf_token %}
+            
+            <div class="mb-3">
+                <label for="{{ form.hb_value.id_for_label }}" class="form-label">{{ form.hb_value.label }}</label>
+                {{ form.hb_value }}
+                <div class="invalid-feedback">
+                    {{ form.hb_value.errors }}
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="{{ form.berat_badan.id_for_label }}" class="form-label">{{ form.berat_badan.label }}</label>
+                {{ form.berat_badan }}
+                <div class="invalid-feedback">
+                    {{ form.berat_badan.errors }}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="{{ form.tensi.id_for_label }}" class="form-label">{{ form.tensi.label }}</label>
+                {{ form.tensi }}
+                <div class="invalid-feedback">
+                    {{ form.tensi.errors }}
+                </div>
+            </div>
+
+            <hr>
+            <button type="submit" class="btn btn-primary">Simpan dan Kembali ke Halaman Pendonor</button>
+        </form>
+    </div>
+{% endblock %}

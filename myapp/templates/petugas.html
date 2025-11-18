@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Data Petugas UTD RSUD Bintan</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#petugasModal" id="addPetugasBtn">
+                <i class="bi bi-person-plus me-2"></i>Tambah Petugas
+            </button>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-sm">
+            <thead>
+                <tr>
+                    <th scope="col">No</th>
+                    <th scope="col">Nama</th>
+                    <th scope="col">NIP</th>
+                    <th scope="col">Jabatan</th>
+                    <th scope="col">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="petugasTableBody">
+                {% for petugas in all_petugas %}
+                <tr id="petugas-{{ petugas.id }}">
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ petugas.nama }}</td>
+                    <td>{{ petugas.nip }}</td>
+                    <td>{{ petugas.jabatan }}</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-info edit-btn" data-id="{{ petugas.id }}" data-nama="{{ petugas.nama }}" data-nip="{{ petugas.nip }}" data-jabatan="{{ petugas.jabatan }}">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="{{ petugas.id }}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr id="no-petugas-row">
+                    <td colspan="5" class="text-center">Belum ada data petugas.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Add/Edit Petugas Modal -->
+    <div class="modal fade" id="petugasModal" tabindex="-1" aria-labelledby="petugasModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="petugasModalLabel">Tambah Petugas Baru</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="petugasForm">
+                        <input type="hidden" id="petugasId" name="id">
+                        <div class="mb-3">
+                            <label for="nama" class="form-label">Nama</label>
+                            <input type="text" class="form-control" id="nama" name="nama" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="nip" class="form-label">NIP</label>
+                            <input type="text" class="form-control" id="nip" name="nip" pattern="[0-9]+" title="NIP hanya boleh berisi angka" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="jabatan" class="form-label">Jabatan</label>
+                            <input type="text" class="form-control" id="jabatan" name="jabatan" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="submitPetugasForm">Simpan</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteConfirmModalLabel">Konfirmasi Hapus</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Apakah Anda yakin ingin menghapus petugas ini?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Ya, Hapus</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        const csrftoken = getCookie('csrftoken');
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const petugasModal = new bootstrap.Modal(document.getElementById('petugasModal'));
+            const deleteConfirmModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+            const petugasForm = document.getElementById('petugasForm');
+            const petugasModalLabel = document.getElementById('petugasModalLabel');
+            const submitPetugasForm = document.getElementById('submitPetugasForm');
+            const petugasTableBody = document.getElementById('petugasTableBody');
+            const addPetugasBtn = document.getElementById('addPetugasBtn');
+            const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+            let petugasToDeleteId = null;
+
+            addPetugasBtn.addEventListener('click', function() {
+                petugasModalLabel.textContent = 'Tambah Petugas Baru';
+                submitPetugasForm.textContent = 'Simpan';
+                petugasForm.reset();
+                petugasForm.elements['id'].value = '';
+            });
+
+            petugasForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const petugasId = petugasForm.elements['id'].value;
+                const nama = petugasForm.querySelector('#nama').value;
+                const nip = petugasForm.querySelector('#nip').value;
+                const jabatan = petugasForm.querySelector('#jabatan').value;
+
+                const jsonData = {
+                    nama: nama,
+                    nip: nip,
+                    jabatan: jabatan
+                };
+                if (petugasId) {
+                    jsonData.id = petugasId;
+                }
+
+                const url = petugasId ? '{% url "myapp:edit_petugas" %}' : '{% url "myapp:petugas" %}';
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: JSON.stringify(jsonData),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        petugasModal.hide();
+                        updatePetugasTable(data.petugas);
+                    } else {
+                        alert('Error: ' + JSON.stringify(data.errors));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Terjadi kesalahan saat menyimpan data.');
+                });
+            });
+
+            petugasTableBody.addEventListener('click', function(event) {
+                if (event.target.closest('.edit-btn')) {
+                    const button = event.target.closest('.edit-btn');
+                    petugasModalLabel.textContent = 'Edit Petugas';
+                    submitPetugasForm.textContent = 'Update';
+                    petugasForm.elements['id'].value = button.dataset.id;
+                    petugasForm.elements['nama'].value = button.dataset.nama;
+                    petugasForm.elements['nip'].value = button.dataset.nip;
+                    petugasForm.elements['jabatan'].value = button.dataset.jabatan;
+                    petugasModal.show();
+                } else if (event.target.closest('.delete-btn')) {
+                    const button = event.target.closest('.delete-btn');
+                    petugasToDeleteId = button.dataset.id;
+                    deleteConfirmModal.show();
+                }
+            });
+
+            confirmDeleteBtn.addEventListener('click', function() {
+                if (petugasToDeleteId) {
+                    fetch('{% url "myapp:delete_petugas" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrftoken,
+                        },
+                        body: JSON.stringify({ id: petugasToDeleteId }),
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            document.getElementById(`petugas-${petugasToDeleteId}`).remove();
+                            updateTableNumbers();
+                            if (petugasTableBody.rows.length === 0) {
+                                petugasTableBody.innerHTML = '<tr id="no-petugas-row"><td colspan="5" class="text-center">Belum ada data petugas.</td></tr>';
+                            }
+                        } else {
+                            alert('Error: ' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Terjadi kesalahan saat menghapus data.');
+                    })
+                    .finally(() => {
+                        deleteConfirmModal.hide();
+                        petugasToDeleteId = null;
+                    });
+                }
+            });
+
+            function updatePetugasTable(petugas) {
+                const existingRow = document.getElementById(`petugas-${petugas.id}`);
+                if (existingRow) {
+                    // Update existing row
+                    existingRow.children[1].textContent = petugas.nama;
+                    existingRow.children[2].textContent = petugas.nip;
+                    existingRow.children[3].textContent = petugas.jabatan;
+                    // Update data attributes for edit button
+                    const editBtn = existingRow.querySelector('.edit-btn');
+                    editBtn.dataset.nama = petugas.nama;
+                    editBtn.dataset.nip = petugas.nip;
+                    editBtn.dataset.jabatan = petugas.jabatan;
+                } else {
+                    // Add new row
+                    const noPetugasRow = document.getElementById('no-petugas-row');
+                    if (noPetugasRow) noPetugasRow.remove();
+
+                    const newRow = petugasTableBody.insertRow();
+                    newRow.id = `petugas-${petugas.id}`;
+                    newRow.innerHTML = `
+                        <td></td>
+                        <td>${petugas.nama}</td>
+                        <td>${petugas.nip}</td>
+                        <td>${petugas.jabatan}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-info edit-btn" data-id="${petugas.id}" data-nama="${petugas.nama}" data-nip="${petugas.nip}" data-jabatan="${petugas.jabatan}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="${petugas.id}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                }
+                updateTableNumbers();
+            }
+
+            function updateTableNumbers() {
+                const rows = petugasTableBody.querySelectorAll('tr');
+                rows.forEach((row, index) => {
+                    if (row.id !== 'no-petugas-row') {
+                        row.children[0].textContent = index + 1;
+                    }
+                });
+            }
+
+            // Initial numbering on page load
+            updateTableNumbers();
+        });
+    </script>
+{% endblock %}

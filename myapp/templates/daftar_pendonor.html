@@ -1,0 +1,665 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Data Pendonor UTD RSUD Kabupaten Bintan</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'myapp:tambah_pendonor_lama' %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-person-add"></i>
+            </a>
+            <a href="{% url 'myapp:panggil_pendonor' %}" class="btn btn-sm btn-outline-secondary ms-2">
+                <i class="bi bi-bell"></i> Panggil Pendonor
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Cari pendonor (nama atau golongan darah)" id="searchInput" value="{{ search_query|default:'' }}">
+            </div>
+        </div>
+        <div class="col-md-2">
+            <select class="form-select" id="filterGolonganDarah">
+                <option value="">Golongan Darah</option>
+                {% for gd_value, gd_label in pendonor_golongan_darah_choices %}
+                    <option value="{{ gd_value }}" {% if gd_value == selected_golongan_darah %}selected{% endif %}>{{ gd_label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-1">
+            <select class="form-select" id="filterRhesus">
+                <option value="">Rhesus</option>
+                {% for rh_value, rh_label in pendonor_rhesus_choices %}
+                    <option value="{{ rh_value }}" {% if rh_value == selected_rhesus %}selected{% endif %}>{{ rh_label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-1">
+            <input type="text" class="form-control" id="filterTahun" placeholder="Tahun" value="{{ selected_tahun|default:'' }}">
+        </div>
+        <div class="col-md-1">
+            <select class="form-select" id="filterBulan">
+                <option value="">Bulan</option>
+                {% for month_num, month_name in months %}
+                    <option value="{{ month_num }}" {% if month_num|stringformat:"s" == selected_bulan %}selected{% endif %}>{{ month_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select class="form-select" id="filterJenisKelamin">
+                <option value="">Jenis Kelamin</option>
+                {% for jk_value, jk_label in pendonor_jenis_kelamin_choices %}
+                    <option value="{{ jk_value }}" {% if jk_value == selected_jenis_kelamin %}selected{% endif %}>{{ jk_label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-1">
+            <button class="btn btn-outline-secondary" type="button" id="applyFilterButton">Filter</button>
+        </div>
+    </div>
+
+    <hr class="mb-4">
+
+    <div class="table-responsive mt-4">
+        <table class="table table-striped table-sm">
+            <thead>
+                <tr>
+                    <th scope="col" class="text-center">No</th>
+                    <th scope="col" class="text-center">Nama</th>
+                    <th scope="col" class="text-center">Tanggal Lahir</th>
+                    <th scope="col" class="text-center">NIK</th>
+                    <th scope="col" class="text-center">Golongan Darah</th>
+                    <th scope="col" class="text-center">Rhesus</th>
+                    <th scope="col" class="text-center">No HP</th>
+                    <th scope="col" class="text-center">Tgl Terakhir Donor</th>
+                    <th scope="col" class="text-center">Riwayat Donor</th>
+                    <th scope="col" class="text-center">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="pendonorTableBody">
+                {% for pendonor in all_pendonor %}
+                <tr id="pendonor-{{ pendonor.id }}">
+                    <td class="text-center">{{ forloop.counter }}</td>
+                    <td>{{ pendonor.nama|title }}</td>
+                    <td class="text-center">{{ pendonor.tanggal_lahir|date:"d M Y" }}</td>
+                    <td class="text-center">{{ pendonor.nik_ktp }}</td>
+                    <td class="text-center">{{ pendonor.golongan_darah }}</td>
+                    <td class="text-center">{{ pendonor.rhesus }}</td>
+                    <td class="text-center">{{ pendonor.no_telepon }}</td>
+                    <td class="text-center">{{ pendonor.display_tgl_donor_terakhir|default:"-" }}</td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-primary view-history-btn" data-bs-toggle="modal" data-bs-target="#donorHistoryModal" data-id="{{ pendonor.nik_ktp }}">
+                            Lihat Riwayat
+                        </button>
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-danger delete-btn" data-bs-toggle="modal" data-bs-target="#deletePendonorModal" data-id="{{ pendonor.id }}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr id="no-pendonor-row">
+                    <td colspan="10" class="text-center">Belum ada data pendonor yang diverifikasi.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Delete Pendonor Modal -->
+    <div class="modal fade" id="deletePendonorModal" tabindex="-1" aria-labelledby="deletePendonorModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deletePendonorModalLabel">Konfirmasi Hapus Data</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Apakah anda yakin menghapus data pendonor ini?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Hapus</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Donor History Modal -->
+    <div class="modal fade" id="donorHistoryModal" tabindex="-1" aria-labelledby="donorHistoryModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="donorHistoryModalLabel">Riwayat Donor untuk <span id="historyDonorName"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="donorHistoryBody">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th scope="col" class="text-center align-middle">No</th>
+                                    <th scope="col" class="text-center align-middle">Tanggal</th>
+                                    <th scope="col" class="text-center align-middle">Status</th>
+                                    <th scope="col" class="text-center align-middle" style="width: 20%;">Nama Petugas</th>
+                                    <th scope="col" class="text-center align-middle">Detail</th>
+                                    <th scope="col" class="text-center align-middle">Keterangan</th>
+                                    <th scope="col" class="text-center align-middle">Aksi</th>
+                                    <th scope="col" class="text-center align-middle">Lampiran</th>
+                                </tr>
+                            </thead>
+                            <tbody id="donorHistoryTableBody">
+                                <tr>
+                                    <td colspan="7" class="text-center">Memuat riwayat...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aftap Modal -->
+    <div class="modal fade" id="aftapModal" tabindex="-1" aria-labelledby="aftapModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title" id="aftapModalLabel">Formulir Aftap</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="aftapForm">
+                        {% csrf_token %}
+                        <input type="hidden" id="aftapVerifikasiId" name="verifikasi_id">
+                        <div class="mb-3">
+                            <label for="aftapNoKantong" class="form-label">No Kantong</label>
+                            <input type="text" class="form-control" id="aftapNoKantong" name="no_kantong" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="aftapJenisKantong" class="form-label">Jenis Kantong</label>
+                            <select class="form-select" id="aftapJenisKantong" name="jenis_kantong" required>
+                                <option value="">Pilih Jenis Kantong</option>
+                                <option value="350 double">350 double</option>
+                                <option value="350 triple">350 triple</option>
+                                <option value="250 double">250 double</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="aftapPengambilan" class="form-label">Pengambilan</label>
+                            <select class="form-select" id="aftapPengambilan" name="pengambilan" required>
+                                <option value="">Pilih Pengambilan</option>
+                                <option value="Baik">Baik</option>
+                                <option value="Tidak Lancar">Tidak Lancar</option>
+                                <option value="Stop">Stop</option>
+                            </select>
+                        </div>
+                        <div class="mb-3" id="aftapStopCcContainer" style="display: none;">
+                            <label for="aftapStopCc" class="form-label">Dihentikan pada (cc)</label>
+                            <input type="number" class="form-control" id="aftapStopCc" name="stop_cc">
+                        </div>
+                        <div class="mb-3">
+                            <label for="aftapDiambil" class="form-label">Diambil sebanyak</label>
+                            <select class="form-select" id="aftapDiambil" name="diambil_sebanyak" required>
+                                <option value="">Pilih Jumlah</option>
+                                <option value="250 cc">250 cc</option>
+                                <option value="350 cc">350 cc</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="aftapReaksi" class="form-label">Reaksi Donor</label>
+                            <select class="form-select" id="aftapReaksi" name="reaksi_donor">
+                                <option value="">Pilih Reaksi Donor</option>
+                                <option value="Tidak Ada">Tidak Ada</option>
+                                <option value="Pusing">Pusing</option>
+                                <option value="Pingsan">Pingsan</option>
+                                <option value="Bocor">Bocor</option>
+                                <option value="Mual">Mual</option>
+                                <option value="Kram">Kram</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                        </div>
+                        <div class="mb-3" id="aftapReaksiLainnyaContainer" style="display: none;">
+                            <label for="aftapReaksiLainnya" class="form-label">Reaksi Donor Lainnya</label>
+                            <input type="text" class="form-control" id="aftapReaksiLainnya" name="reaksi_donor_lainnya" placeholder="Masukkan reaksi donor lainnya">
+                        </div>
+                        <hr>
+                        <div class="mb-3">
+                            <label for="petugas_aftap_id" class="form-label">Nama Petugas AFTAP</label>
+                            <select class="form-select" id="petugas_aftap_id" name="petugas_aftap_id">
+                                <option value="">Pilih Petugas AFTAP</option>
+                                {% for petugas in all_petugas %}
+                                    <option value="{{ petugas.id }}">{{ petugas.nama }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" id="saveAftapBtn">Simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            const filterGolonganDarah = document.getElementById('filterGolonganDarah');
+            const filterRhesus = document.getElementById('filterRhesus');
+            const filterTahun = document.getElementById('filterTahun');
+            const filterBulan = document.getElementById('filterBulan');
+            const filterJenisKelamin = document.getElementById('filterJenisKelamin');
+            const applyFilterButton = document.getElementById('applyFilterButton');
+
+            function applySearchAndFilter() {
+                const currentUrl = new URL(window.location.href);
+                const params = new URLSearchParams();
+
+                // Search
+                const searchQuery = searchInput.value.trim();
+                if (searchQuery) {
+                    params.append('search_query', searchQuery);
+                }
+
+                // Filters
+                const selectedGolonganDarah = filterGolonganDarah.value;
+                if (selectedGolonganDarah) {
+                    params.append('golongan_darah', selectedGolonganDarah);
+                }
+                const selectedRhesus = filterRhesus.value;
+                if (selectedRhesus) {
+                    params.append('rhesus', selectedRhesus);
+                }
+                const selectedTahun = filterTahun.value;
+                if (selectedTahun) {
+                    params.append('tahun', selectedTahun);
+                }
+                const selectedBulan = filterBulan.value;
+                if (selectedBulan) {
+                    params.append('bulan', selectedBulan);
+                }
+                const selectedJenisKelamin = filterJenisKelamin.value;
+                if (selectedJenisKelamin) {
+                    params.append('jenis_kelamin', selectedJenisKelamin);
+                }
+
+                currentUrl.search = params.toString();
+                window.location.href = currentUrl.toString();
+            }
+
+            applyFilterButton.addEventListener('click', applySearchAndFilter);
+
+            // Optional: Trigger search on Enter key in search input
+            searchInput.addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    applySearchAndFilter();
+                }
+            });
+
+            // Delete Modal Logic (for daftar_pendonor)
+            const deletePendonorModal = document.getElementById('deletePendonorModal');
+            const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+            let pendonorToDeleteId = null;
+
+            deletePendonorModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                pendonorToDeleteId = button.getAttribute('data-id');
+            });
+
+            confirmDeleteBtn.addEventListener('click', function() {
+                if (pendonorToDeleteId) {
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                    fetch(`/pendonor/delete/${pendonorToDeleteId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrfToken,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ id: pendonorToDeleteId })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            document.getElementById(`pendonor-${pendonorToDeleteId}`).remove();
+                            const modal = bootstrap.Modal.getInstance(deletePendonorModal);
+                            modal.hide();
+                        } else {
+                            alert('Error deleting pendonor: ' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Fetch Error:', error);
+                        alert('An error occurred while deleting the pendonor.');
+                    });
+                }
+            });
+
+            // Editable Nomor Kantong Logic
+            document.querySelectorAll('.editable-nomor-kantong').forEach(span => {
+                span.addEventListener('click', function() {
+                    const currentText = this.textContent.trim() === 'Klik untuk isi' ? '' : this.textContent.trim();
+                    const pendonorId = this.dataset.pendonorId;
+                    const verifikasiId = this.dataset.verifikasiId;
+
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = currentText;
+                    input.classList.add('form-control', 'form-control-sm');
+
+                    this.replaceWith(input);
+                    input.focus();
+
+                    const saveNomorKantong = () => {
+                        const newNomorKantong = input.value.trim();
+                        if (newNomorKantong !== currentText) {
+                            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                            fetch(`/update-nomor-kantong/${verifikasiId}/`, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRFToken': csrfToken,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ nomor_kantong: newNomorKantong })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    span.textContent = newNomorKantong || 'Klik untuk isi';
+                                } else {
+                                    alert('Error updating nomor kantong: ' + data.error);
+                                    span.textContent = currentText || 'Klik untuk isi'; // Revert on error
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Fetch Error:', error);
+                                alert('An error occurred while updating nomor kantong.');
+                                span.textContent = currentText || 'Klik untuk isi'; // Revert on error
+                            });
+                        } else {
+                            span.textContent = currentText || 'Klik untuk isi';
+                        }
+                        input.replaceWith(span);
+                    };
+
+                    input.addEventListener('blur', saveNomorKantong);
+                    input.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            input.blur(); // Trigger blur to save
+                        }
+                    });
+                });
+            });
+
+            // Donor History Modal Logic
+            const donorHistoryModal = document.getElementById('donorHistoryModal');
+            const historyDonorName = document.getElementById('historyDonorName');
+            const donorHistoryTableBody = document.getElementById('donorHistoryTableBody');
+
+            donorHistoryModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget; // Button that triggered the modal
+                const nik_ktp = button.getAttribute('data-id');
+
+                // Clear previous content and show loading message
+                donorHistoryTableBody.innerHTML = '<tr><td colspan="6" class="text-center">Memuat riwayat...</td></tr>'; // Target tbody
+                historyDonorName.textContent = '';
+
+                fetch(`/get-donor-history/${nik_ktp}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            historyDonorName.textContent = data.pendonor_name;
+                            donorHistoryTableBody.innerHTML = ''; // Clear loading message
+
+                            if (data.history_records && data.history_records.length > 0) {
+                                data.history_records.forEach((record, index) => {
+                                    let detail_parts = [];
+
+                                    // 1. Status Kelayakan (Layak/Tidak Layak)
+                                    let displayStatus = record.status;
+                                    if (record.status === 'Lanjut Donor') {
+                                        displayStatus = 'Layak';
+                                    } else if (record.status === 'Tidak Lanjut') {
+                                        displayStatus = 'Tidak Layak';
+                                    }
+                                    detail_parts.push(`<strong>Status: ${(displayStatus || '').toUpperCase()}</strong>`);
+
+                                    // 2. Pemeriksaan Fisik
+                                    if (record.physical_exam_details && record.physical_exam_details.length > 0) {
+                                        let physicalExamHtml = '<strong>Pemeriksaan Fisik:</strong><br>';
+                                        record.physical_exam_details.forEach(detail => {
+                                            physicalExamHtml += `&nbsp;&nbsp;- ${detail.field}: ${detail.value} (${detail.reason})<br>`;
+                                        });
+                                        detail_parts.push(physicalExamHtml);
+                                    }
+
+                                    // 3. Hasil Kuesioner
+                                    if (record.alasan_kuesioner) {
+                                        const kuesionerHtml = `<strong>Hasil Kuesioner:</strong><br>${record.alasan_kuesioner.replace(/\n/g, '<br>')}`;
+                                        detail_parts.push(kuesionerHtml);
+                                    }
+
+                                    // 4. Catatan Dokter
+                                    if (record.catatan_dokter) {
+                                        const catatanHtml = `<strong>Catatan Dokter:</strong><br>${record.catatan_dokter}`;
+                                        detail_parts.push(catatanHtml);
+                                    }
+
+                                    let detailHtml = detail_parts.join('<br><br>');
+
+                                    let petugasDisplay = `Petugas Verifikasi: ${record.nama_petugas}`;
+                                    if (record.nama_petugas_aftap && record.nama_petugas_aftap !== '-') {
+                                        petugasDisplay += `<br>Petugas Aftap: ${record.nama_petugas_aftap}`;
+                                    }
+
+                                    // New logic for "Keterangan"
+                                    let keteranganDonor = '';
+                                    let keteranganStyle = ''; // To hold style for the text
+
+                                    // Check if Aftap data is missing
+                                    if (record.status === 'Tidak Lanjut') {
+                                        keteranganDonor = '-';
+                                    } else if (!record.pengambilan && !record.no_kantong_aftap) { // Assuming 'pengambilan' or 'no_kantong_aftap' indicates Aftap data presence
+                                        keteranganDonor = 'Belum diisi';
+                                        keteranganStyle = 'color: red;';
+                                    } else if (record.pengambilan === 'Baik' && record.reaksi_donor === 'Tidak Ada') {
+                                        keteranganDonor = 'Donor Berhasil';
+                                    } else {
+                                        keteranganDonor = 'Donor Gagal';
+                                    }
+
+                                    // New logic for disabling the button
+                                    const isAftapDisabled = record.status === 'Tidak Lanjut';
+
+                                    const row = `
+                                        <tr>
+                                            <td class="text-center">${index + 1}</td>
+                                            <td class="text-center">
+                                                ${record.tgl_display}<br>${record.waktu_display}
+                                            </td>
+                                            <td class="text-center">${record.status}</td>
+                                            <td class="text-center" style="width: 20%;">${petugasDisplay}</td>
+                                            <td>${detailHtml}</td>
+                                            <td class="text-center" style="${keteranganStyle}">${keteranganDonor}</td>
+                                            <td class="text-center">
+                                                <button type="button" class="btn btn-sm btn-info btn-petugas-aftap"
+                                                    data-verifikasi-id="${record.verifikasi_id}"
+                                                    data-no-kantong="${record.no_kantong_aftap}"
+                                                    data-jenis-kantong="${record.jenis_kantong}"
+                                                    data-pengambilan="${record.pengambilan}"
+                                                    data-stop-cc="${record.stop_cc}"
+                                                    data-diambil-sebanyak="${record.diambil_sebanyak}"
+                                                    data-reaksi-donor="${record.reaksi_donor}"
+                                                    ${isAftapDisabled ? 'disabled' : ''}>
+                                                    Diisi Petugas Aftap
+                                                </button>
+                                            </td>
+                                            <td class="text-center">
+                                                <a href="${record.pdf_url}" class="btn btn-sm btn-outline-danger" target="_blank">
+                                                    <i class="bi bi-file-earmark-pdf"></i> PDF
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    `;
+                                    donorHistoryTableBody.insertAdjacentHTML('beforeend', row);
+                                });
+                            } else {
+                                donorHistoryTableBody.innerHTML = '<tr><td colspan="8" class="text-center">Tidak ada riwayat verifikasi untuk pendonor ini.</td></tr>';
+                            }
+                        } else {
+                            donorHistoryTableBody.innerHTML = `<tr><td colspan="8" class="text-center text-danger">Error: ${data.error}</td></tr>`;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Fetch Error:', error);
+                        donorHistoryTableBody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Terjadi kesalahan saat memuat riwayat donor.</td></tr>`;
+                    });
+            });
+
+            // Aftap Modal Logic
+            const aftapModal = new bootstrap.Modal(document.getElementById('aftapModal'));
+            const aftapPengambilanSelect = document.getElementById('aftapPengambilan');
+            const aftapStopCcContainer = document.getElementById('aftapStopCcContainer');
+            const aftapReaksiSelect = document.getElementById('aftapReaksi');
+            const aftapReaksiLainnyaContainer = document.getElementById('aftapReaksiLainnyaContainer');
+            const aftapReaksiLainnyaInput = document.getElementById('aftapReaksiLainnya');
+
+            // Function to toggle visibility of 'Reaksi Donor Lainnya' input
+            function toggleReaksiLainnyaInput() {
+                if (aftapReaksiSelect.value === 'Lainnya') {
+                    aftapReaksiLainnyaContainer.style.display = 'block';
+                } else {
+                    aftapReaksiLainnyaContainer.style.display = 'none';
+                    aftapReaksiLainnyaInput.value = ''; // Clear value when hidden
+                }
+            }
+
+            // Initial call to set correct visibility when modal opens or page loads
+            aftapReaksiSelect.addEventListener('change', toggleReaksiLainnyaInput);
+
+            // Use event delegation for the aftap buttons since they are dynamically added
+            document.getElementById('donorHistoryTableBody').addEventListener('click', function(event) {
+                if (event.target && event.target.classList.contains('btn-petugas-aftap')) {
+                    const button = event.target;
+                    const verifikasiId = button.getAttribute('data-verifikasi-id');
+                    
+                    // Get existing aftap data from data attributes
+                    const noKantong = button.getAttribute('data-no-kantong');
+                    const jenisKantong = button.getAttribute('data-jenis-kantong');
+                    const pengambilan = button.getAttribute('data-pengambilan');
+                    const stopCc = button.getAttribute('data-stop-cc');
+                    const diambilSebanyak = button.getAttribute('data-diambil-sebanyak');
+                    const reaksiDonor = button.getAttribute('data-reaksi-donor'); // This will be the stored value
+
+                    // Set the verifikasi_id in the hidden input of the aftap form
+                    document.getElementById('aftapVerifikasiId').value = verifikasiId;
+                    
+                    // Reset form and fill with existing data
+                    document.getElementById('aftapForm').reset(); // Reset first to clear previous state
+                    document.getElementById('aftapNoKantong').value = noKantong !== 'null' ? noKantong : '';
+                    document.getElementById('aftapJenisKantong').value = jenisKantong !== 'null' ? jenisKantong : '';
+                    document.getElementById('aftapPengambilan').value = pengambilan !== 'null' ? pengambilan : '';
+                    document.getElementById('aftapDiambil').value = diambilSebanyak !== 'null' ? diambilSebanyak : '';
+                    
+                    // Handle reaksiDonor: check if it's one of the predefined options or 'Lainnya'
+                    const predefinedReactions = ["Tidak Ada", "Pusing", "Pingsan", "Bocor", "Mual", "Kram"];
+                    if (reaksiDonor && reaksiDonor !== 'null') {
+                        if (predefinedReactions.includes(reaksiDonor)) {
+                            aftapReaksiSelect.value = reaksiDonor;
+                            aftapReaksiLainnyaInput.value = '';
+                        } else {
+                            aftapReaksiSelect.value = 'Lainnya';
+                            aftapReaksiLainnyaInput.value = reaksiDonor; // Set custom value
+                        }
+                    } else {
+                        aftapReaksiSelect.value = ''; // Default to empty
+                        aftapReaksiLainnyaInput.value = '';
+                    }
+                    toggleReaksiLainnyaInput(); // Call to set initial visibility based on loaded data
+
+                    // Handle dynamic display for stop_cc
+                    if (pengambilan === 'Stop') {
+                        aftapStopCcContainer.style.display = 'block';
+                        document.getElementById('aftapStopCc').value = stopCc !== 'null' ? stopCc : '';
+                    } else {
+                        aftapStopCcContainer.style.display = 'none';
+                        document.getElementById('aftapStopCc').value = ''; // Clear value if not 'Stop'
+                    }
+
+                    aftapModal.show();
+                }
+            });
+
+            aftapPengambilanSelect.addEventListener('change', function() {
+                if (this.value === 'Stop') {
+                    aftapStopCcContainer.style.display = 'block';
+                } else {
+                    aftapStopCcContainer.style.display = 'none';
+                }
+            });
+
+            // Save Aftap data
+            document.getElementById('saveAftapBtn').addEventListener('click', function() {
+                const verifikasiId = document.getElementById('aftapVerifikasiId').value;
+                const aftapForm = document.getElementById('aftapForm');
+                const formData = new FormData(aftapForm);
+                const jsonData = {};
+
+                // Collect data from form
+                formData.forEach((value, key) => {
+                    jsonData[key] = value;
+                });
+
+                // Override reaksi_donor if 'Lainnya' is selected and custom text is provided
+                if (jsonData['reaksi_donor'] === 'Lainnya' && jsonData['reaksi_donor_lainnya']) {
+                    jsonData['reaksi_donor'] = jsonData['reaksi_donor_lainnya'];
+                } else if (jsonData['reaksi_donor'] === 'Lainnya' && !jsonData['reaksi_donor_lainnya']) {
+                    // If 'Lainnya' is selected but no custom text, treat as empty or "Tidak Ada"
+                    jsonData['reaksi_donor'] = ''; // Or "Tidak Ada" if that's preferred default
+                }
+                delete jsonData['reaksi_donor_lainnya']; // Remove the temporary field
+
+                // Add CSRF token
+                jsonData['csrfmiddlewaretoken'] = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                // Send data to backend
+                fetch(`/save-aftap-data/${verifikasiId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': jsonData.csrfmiddlewaretoken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(jsonData)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        aftapModal.hide();
+                        // Optionally, refresh the donor history modal or update the specific row
+                        // For now, we'll just close the modal and the user can re-open to see changes.
+                    } else {
+                        let errorMessage = 'Error saving Aftap data:';
+                        if (result.errors) {
+                            for (const field in result.errors) {
+                                errorMessage += `\n${field}: ${result.errors[field].join(', ')}`;
+                            }
+                        } else if (result.error) {
+                            errorMessage += `\n${result.error}`;
+                        }
+                        alert(errorMessage);
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch Error:', error);
+                    alert('An error occurred while saving Aftap data.');
+                });
+            });
+        }); // Ini adalah kurung kurawal penutup yang hilang
+    </script>
+{% endblock %}

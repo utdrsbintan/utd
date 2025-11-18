@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .blood-card {
+        border-radius: 15px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        border: none;
+    }
+    .blood-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+    .card-title-custom {
+        font-weight: bold;
+        font-size: 1.5rem;
+    }
+    .total-count-container {
+        margin: 1rem 0;
+    }
+    .total-count {
+        font-size: 3rem;
+        font-weight: 700;
+    }
+    .gender-stats {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(0,0,0,0.1);
+    }
+    .gender-col {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .gender-icon {
+        width: 30px;
+        height: 30px;
+        margin-bottom: 0.5rem;
+    }
+    .gender-count {
+        font-size: 1.2rem;
+        font-weight: 500;
+    }
+</style>
+
+    <div class="text-center mt-5 mb-4">
+        <h1>Selamat Datang</h1>
+    </div>
+
+    <div class="container mt-4">
+        <div class="d-flex flex-wrap justify-content-center">
+            {% for blood_group, stats in blood_group_stats.items %}
+                <div class="blood-card text-center mb-4 mx-3" style="width: 18rem; 
+                    {% if blood_group == 'A' %}background-color: #e7f3ff; color: #004085;
+                    {% elif blood_group == 'B' %}background-color: #fff9e6; color: #856404;
+                    {% elif blood_group == 'AB' %}background-color: #e9f7ef; color: #155724;
+                    {% elif blood_group == 'O' %}background-color: #fdecea; color: #721c24;
+                    {% endif %}">
+                    <div class="card-body p-4">
+                        <h5 class="card-title-custom">Golongan Darah<br>{{ blood_group }}</h5>
+                        
+                        <div class="total-count-container">
+                            <span class="total-count">{{ stats.total }}</span>
+                            <p class="mb-0">Orang</p>
+                        </div>
+
+                        <div class="gender-stats">
+                            <div class="gender-col">
+                                <!-- Male Icon SVG -->
+                                <svg class="gender-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M14.5 2.5C14.5 3.88 13.38 5 12 5C10.62 5 9.5 3.88 9.5 2.5C9.5 1.12 10.62 0 12 0C13.38 0 14.5 1.12 14.5 2.5ZM12 6C14.49 6 16.5 8.01 16.5 10.5V16.5H14.5V10.5C14.5 9.12 13.38 8 12 8C10.62 8 9.5 9.12 9.5 10.5V16.5H7.5V10.5C7.5 8.01 9.51 6 12 6ZM5.5 18.5C5.5 19.88 6.62 21 8 21H16C17.38 21 18.5 19.88 18.5 18.5V17.5H5.5V18.5Z"/>
+                                </svg>
+                                <span class="gender-count">{{ stats.Laki_laki }}</span>
+                                <small>Laki-laki</small>
+                            </div>
+                            <div class="gender-col">
+                                <!-- Female Icon SVG -->
+                                <svg class="gender-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 0C10.34 0 9 1.34 9 3C9 4.66 10.34 6 12 6C13.66 6 15 4.66 15 3C15 1.34 13.66 0 12 0ZM18 7H6C4.9 7 4 7.9 4 9V15C4 16.1 4.9 17 6 17H7V24H17V17H18C19.1 17 20 16.1 20 15V9C20 7.9 19.1 7 18 7Z"/>
+                                </svg>
+                                <span class="gender-count">{{ stats.Perempuan }}</span>
+                                <small>Perempuan</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="alert alert-info" role="alert">
+                    Tidak ada data golongan darah yang tersedia untuk ditampilkan.
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

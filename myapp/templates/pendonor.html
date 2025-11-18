@@ -1,0 +1,648 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Data Calon Pendonor UTD RSUD Kabupaten Bintan</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{% url 'myapp:daftar_pendonor' %}" class="btn btn-sm btn-outline-info ms-2">
+                <i class="bi bi-list me-2"></i>Daftar Pendonor
+            </a>
+            <a href="{% url 'myapp:riwayat_gagal_donor' %}" class="btn btn-sm btn-outline-danger ms-2">
+                <i class="bi bi-x-circle me-2"></i>Gagal Donor
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-3 align-items-center">
+        <div class="col-md-9">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Cari nama calon pendonor berdasarkan nama, golongan darah atau NIK" id="searchInput" value="{{ search_query|default:'' }}">
+            </div>
+        </div>
+        <div class="col-md-1">
+            <button class="btn btn-outline-secondary" type="button" id="applyFilterButton">Cari</button>
+        </div>
+        <div class="col-md-2 text-end">
+            <a href="{% url 'myapp:add_pendonor' %}" class="btn btn-primary" id="addPendonorBtn" title="Tambah Pendonor">
+                <i class="bi bi-person-plus"></i>
+            </a>
+        </div>
+    </div>
+
+    <hr class="mb-4">
+
+    <div class="table-responsive mt-4">
+        <table class="table table-striped table-sm">
+            <thead>
+                <tr>
+                    <th scope="col" class="text-center">No</th>
+                    <th scope="col" class="text-center">Tgl</th>
+                    <th scope="col" class="text-center">Waktu</th>
+                    <th scope="col" class="text-center">Nama</th>
+                    <th scope="col" class="text-center">Tgl Lahir</th>
+                    <th scope="col" class="text-center">NIK KTP</th>
+                    <th scope="col" class="text-center">Golongan Darah</th>
+                    <th scope="col" class="text-center">Rhesus</th>
+                    <th scope="col" class="text-center">Tgl Donor Terakhir</th>
+                    <th scope="col" class="text-center">Nomor HP</th>
+                    <th scope="col" class="text-center">Aksi</th>
+                    <th scope="col" class="text-center">Verifikasi</th>
+                </tr>
+            </thead>
+            <tbody id="pendonorTableBody">
+                {% for pendonor in all_pendonor %}
+                <tr id="pendonor-{{ pendonor.id }}">
+                    <td class="text-center">{{ forloop.counter }}</td>
+                    <td class="text-center">{{ pendonor.tgl|date:"d M Y" }}</td>
+                    <td class="text-center">{{ pendonor.waktu|time:"H:i" }}</td>
+                    <td>{{ pendonor.nama|title }}</td>
+                    <td class="text-center">{{ pendonor.tanggal_lahir|date:"d M Y" }}</td>
+                    <td class="text-center">{{ pendonor.nik_ktp }}</td>
+                    <td class="text-center">{{ pendonor.golongan_darah }}</td>
+                    <td class="text-center">{{ pendonor.rhesus }}</td>
+                    <td class="text-center">{{ pendonor.display_tgl_donor_terakhir }}</td>
+                    <td class="text-center">{{ pendonor.no_telepon }}</td>
+                    <td class="text-center">
+                        <a href="{% url 'myapp:edit_pendonor' pendonor.id %}" class="btn btn-sm btn-info edit-btn">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <button type="button" class="btn btn-sm btn-danger delete-btn" data-bs-toggle="modal" data-bs-target="#deletePendonorModal" data-id="{{ pendonor.id }}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-success verify-pendonor-btn" data-bs-toggle="modal" data-bs-target="#verifikasiModal" data-id="{{ pendonor.id }}" data-nik="{{ pendonor.nik_ktp }}" data-is-lama="{{ pendonor.is_lama|yesno:'true,false' }}" data-alasan="{{ pendonor.alasan_tidak_layak }}">
+                            Verifikasi Pendonor
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr id="no-pendonor-row">
+                    <td colspan="12" class="text-center">Belum ada data pendonor.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Delete Pendonor Modal -->
+    <div class="modal fade" id="deletePendonorModal" tabindex="-1" aria-labelledby="deletePendonorModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deletePendonorModalLabel">Konfirmasi Hapus Data</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Apakah anda yakin menghapus data calon pendonor ini?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Hapus</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Verifikasi Modal -->
+    <div class="modal fade" id="verifikasiModal" tabindex="-1" aria-labelledby="verifikasiModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-white">
+                    <h5 class="modal-title" id="verifikasiModalLabel">Verifikasi Kelayakan Pendonor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="verifikasiForm" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        <!-- Form fields will be dynamically loaded here -->
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="lanjutVerifikasiBtn">Lanjut</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Verifikasi Lanjut Modal -->
+    <div class="modal fade" id="verifikasiLanjutModal" tabindex="-1" aria-labelledby="verifikasiLanjutModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title" id="verifikasiLanjutModalLabel">Pemeriksaan Fisik Pendonor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="verifikasiLanjutForm" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        {{ verifikasi_lanjut_form.as_p }}
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="lanjutPemeriksaanBtn">Lanjut</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Final Verifikasi Modal -->
+    <div class="modal fade" id="finalVerifikasiModal" tabindex="-1" aria-labelledby="finalVerifikasiModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="finalVerifikasiModalLabel">Hasil Verifikasi Pendonor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="finalVerifikasiBody">
+                    <!-- Content will be dynamically loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">Selesai</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let pendonorToVerifyId = null; // Keep track of the pendonor being verified
+            let jenisDonasiValue = ''; // To store jenis_donasi from the first modal
+            let jenisDonorValue = ''; // To store jenis_donor from the first modal
+
+            const searchInput = document.getElementById('searchInput');
+            const applyFilterButton = document.getElementById('applyFilterButton');
+
+            function applySearchAndFilter() {
+                const currentUrl = new URL(window.location.href);
+                const params = new URLSearchParams();
+
+                // Search
+                const searchQuery = searchInput.value.trim();
+                if (searchQuery) {
+                    params.append('search_query', searchQuery);
+                }
+
+                currentUrl.search = params.toString();
+                console.log('Navigating to:', currentUrl.toString()); // Debugging line
+                window.location.href = currentUrl.toString();
+            }
+
+            applyFilterButton.addEventListener('click', applySearchAndFilter);
+
+            // Optional: Trigger search on Enter key in search input
+            searchInput.addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    applySearchAndFilter();
+                }
+            });
+
+            // Delete Modal Logic
+            const deletePendonorModal = document.getElementById('deletePendonorModal');
+            const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+            let pendonorToDeleteId = null;
+
+            deletePendonorModal.addEventListener('show.bs.modal', function (event) {
+                // Button that triggered the modal
+                const button = event.relatedTarget;
+                // Extract info from data-bs-* attributes
+                pendonorToDeleteId = button.getAttribute('data-id');
+            });
+
+            confirmDeleteBtn.addEventListener('click', function() {
+                if (pendonorToDeleteId) {
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                    fetch(`/pendonor/delete/${pendonorToDeleteId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrfToken,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ id: pendonorToDeleteId })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Remove the row from the table
+                            document.getElementById(`pendonor-${pendonorToDeleteId}`).remove();
+                            // Hide the modal
+                            const modal = bootstrap.Modal.getInstance(deletePendonorModal);
+                            modal.hide();
+                        } else {
+                            alert('Error deleting pendonor: ' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while deleting the pendonor.');
+                    });
+                }
+            });
+
+            // Verifikasi Modal Logic
+            const verifikasiModal = document.getElementById('verifikasiModal');
+            const verifikasiForm = document.getElementById('verifikasiForm');
+
+            verifikasiModal.addEventListener('show.bs.modal', function (event) {
+                // Button that triggered the modal
+                const button = event.relatedTarget;
+                // Extract info from data-bs-* attributes
+                pendonorToVerifyId = button.getAttribute('data-id'); // Set the global variable
+                const nik_ktp = button.getAttribute('data-nik');
+                const isLama = button.getAttribute('data-is-lama') === 'true';
+                const alasanTidakLayak = button.getAttribute('data-alasan');
+
+                // Clear previous dynamic content
+                verifikasiForm.innerHTML = '';
+
+                // Fetch and display donation history count
+                if (nik_ktp) {
+                    fetch(`/get-donor-history/${nik_ktp}/`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.donation_count > 0) {
+                                const historyDiv = document.createElement('div');
+                                historyDiv.classList.add('alert', 'alert-info');
+                                let historyHtml = '<strong>Riwayat:</strong><br>';
+                                historyHtml += `Sudah Donor di UTD RSUD Bintan : <strong>${data.donation_count} Kali</strong><br>`;
+                                if (data.last_donation_date) {
+                                    historyHtml += `Tanggal terakhir donor : ${data.last_donation_date}`;
+                                }
+                                historyDiv.innerHTML = historyHtml;
+                                verifikasiForm.prepend(historyDiv);
+                            }
+                        })
+                        .catch(error => console.error('Error fetching donor history:', error));
+                }
+
+                // Render the form
+                verifikasiForm.insertAdjacentHTML('beforeend', `
+                    {% csrf_token %}
+                    {{ verifikasi_form.as_p }}
+                `);
+
+                // Display alasan_tidak_layak if it exists
+                if (alasanTidakLayak) {
+                    const alasanDiv = document.createElement('div');
+                    alasanDiv.classList.add('alert', 'alert-danger');
+                    alasanDiv.innerHTML = `<strong>Keterangan:</strong><br>${alasanTidakLayak.replace(/\n/g, '<br>')}`;
+                    // Prepend after the history div if it exists, otherwise prepend to form
+                    const historyDiv = verifikasiForm.querySelector('.alert-info');
+                    if (historyDiv) {
+                        historyDiv.after(alasanDiv);
+                    } else {
+                        verifikasiForm.prepend(alasanDiv);
+                    }
+                }
+
+                // Set default value for status_pendonor
+                const statusPendonorRadios = verifikasiForm.querySelectorAll('input[name="status_pendonor"]');
+                if (isLama) {
+                    statusPendonorRadios.forEach(radio => {
+                        if (radio.value === 'Pendonor Lama') {
+                            radio.checked = true;
+                        }
+                    });
+                }
+
+                // Add event listener for jenis_donasi change
+                const jenisDonasiSelect = verifikasiForm.querySelector('#id_jenis_donasi');
+                const jenisDonorSelect = verifikasiForm.querySelector('#id_jenis_donor');
+
+                jenisDonasiSelect.addEventListener('change', function() {
+                    if (this.value === 'Luar Gedung') {
+                        jenisDonorSelect.value = 'Sukarela';
+                        jenisDonorSelect.setAttribute('disabled', 'disabled');
+                    } else {
+                        jenisDonorSelect.removeAttribute('disabled');
+                    }
+                });
+            });
+
+            const lanjutVerifikasiBtn = document.getElementById('lanjutVerifikasiBtn');
+            lanjutVerifikasiBtn.addEventListener('click', function() {
+                const verifikasiForm = document.getElementById('verifikasiForm');
+                // Remove previous validation feedback
+                verifikasiForm.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+                verifikasiForm.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+
+                let formIsValid = true;
+
+                // Validate jenis_donasi (select field)
+                const jenisDonasiSelect = verifikasiForm.querySelector('#id_jenis_donasi');
+                if (jenisDonasiSelect && jenisDonasiSelect.value === '') {
+                    formIsValid = false;
+                    jenisDonasiSelect.classList.add('is-invalid');
+                    const feedbackDiv = document.createElement('div');
+                    feedbackDiv.classList.add('invalid-feedback');
+                    feedbackDiv.textContent = 'Jenis Donasi harus dipilih.';
+                    jenisDonasiSelect.parentNode.insertBefore(feedbackDiv, jenisDonasiSelect.nextSibling);
+                }
+
+                // Validate jenis_donor (select field)
+                const jenisDonorSelect = verifikasiForm.querySelector('#id_jenis_donor');
+                if (jenisDonorSelect && jenisDonorSelect.value === '') {
+                    formIsValid = false;
+                    jenisDonorSelect.classList.add('is-invalid');
+                    const feedbackDiv = document.createElement('div');
+                    feedbackDiv.classList.add('invalid-feedback');
+                    feedbackDiv.textContent = 'Jenis Donor harus dipilih.';
+                    jenisDonorSelect.parentNode.insertBefore(feedbackDiv, jenisDonorSelect.nextSibling);
+                }
+
+                // Validate status_pendonor (radio buttons)
+                const statusPendonorRadios = verifikasiForm.querySelectorAll('input[name="status_pendonor"]');
+                let statusPendonorSelected = false;
+                statusPendonorRadios.forEach(radio => {
+                    if (radio.checked) {
+                        statusPendonorSelected = true;
+                    }
+                });
+
+                if (!statusPendonorSelected) {
+                    formIsValid = false;
+                    // Find the parent div of the radio buttons to add the invalid feedback
+                    const radioGroupParent = verifikasiForm.querySelector('input[name="status_pendonor"]').closest('p');
+                    if (radioGroupParent) {
+                        radioGroupParent.classList.add('is-invalid'); // Add to parent for visual cue
+                        const feedbackDiv = document.createElement('div');
+                        feedbackDiv.classList.add('invalid-feedback');
+                        feedbackDiv.textContent = 'Status Pendonor harus dipilih.';
+                        radioGroupParent.appendChild(feedbackDiv);
+                    }
+                }
+
+                if (formIsValid) {
+                    // Store the values before hiding the modal
+                    jenisDonasiValue = jenisDonasiSelect.value;
+                    jenisDonorValue = jenisDonorSelect.value;
+
+                    const modal1 = bootstrap.Modal.getInstance(verifikasiModal);
+                    modal1.hide();
+
+                    // Set data-pendonor-id on the verifikasiLanjutForm before showing the second modal
+                    const verifikasiLanjutForm = document.getElementById('verifikasiLanjutForm');
+                    if (verifikasiLanjutForm && pendonorToVerifyId) {
+                        verifikasiLanjutForm.setAttribute('data-pendonor-id', pendonorToVerifyId);
+                    }
+
+                    const modal2 = new bootstrap.Modal(document.getElementById('verifikasiLanjutModal'));
+                    modal2.show();
+                } else {
+                    // If form is invalid, prevent modal from closing (already done by not calling hide/show)
+                    // Optionally, scroll to the first invalid field
+                    const firstInvalid = verifikasiForm.querySelector('.is-invalid');
+                    if (firstInvalid) {
+                        firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            });
+
+            // Verifikasi Lanjut Modal Logic
+            const verifikasiLanjutModal = document.getElementById('verifikasiLanjutModal');
+            const verifikasiLanjutForm = document.getElementById('verifikasiLanjutForm');
+            const lanjutPemeriksaanBtn = document.getElementById('lanjutPemeriksaanBtn');
+
+            lanjutPemeriksaanBtn.addEventListener('click', function() {
+                const verifikasiLanjutForm = document.getElementById('verifikasiLanjutForm');
+                verifikasiLanjutForm.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+                verifikasiLanjutForm.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+
+                let formIsValid = true;
+                const formElements = verifikasiLanjutForm.querySelectorAll('input, select, textarea');
+
+                formElements.forEach(element => {
+                    if (element.hasAttribute('required') && element.value.trim() === '') {
+                        formIsValid = false;
+                        element.classList.add('is-invalid');
+                        const feedbackDiv = document.createElement('div');
+                        feedbackDiv.classList.add('invalid-feedback');
+                        feedbackDiv.textContent = 'Kolom ini wajib diisi.';
+                        element.parentNode.insertBefore(feedbackDiv, element.nextSibling);
+                    }
+                });
+
+                if (formIsValid) {
+                    const pendonorId = verifikasiLanjutForm.getAttribute('data-pendonor-id');
+                    const formData = new FormData(verifikasiLanjutForm);
+                    const jsonData = {};
+                    formData.forEach((value, key) => {
+                        jsonData[key] = value;
+                    });
+                    jsonData['csrfmiddlewaretoken'] = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                    fetch(`/save-verifikasi-lanjut/${pendonorId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': jsonData.csrfmiddlewaretoken,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(jsonData)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const modal2 = bootstrap.Modal.getInstance(verifikasiLanjutModal);
+                            modal2.hide();
+
+                            const finalVerifikasiModalElement = document.getElementById('finalVerifikasiModal');
+                            const finalVerifikasiModal = new bootstrap.Modal(finalVerifikasiModalElement);
+                            const finalVerifikasiBody = document.getElementById('finalVerifikasiBody');
+                            const finalVerifikasiFooter = finalVerifikasiModalElement.querySelector('.modal-footer');
+
+                            let modalContent = '';
+                            let overallEligibility = data.overall_eligibility;
+
+                            if (data.physical_exam_details && data.physical_exam_details.length > 0) {
+                                modalContent += `<h6>Hasil Pemeriksaan Fisik:</h6><ul>`;
+                                data.physical_exam_details.forEach(detail => {
+                                    modalContent += `<li><strong>${detail.field}:</strong> ${detail.value} (${detail.reason})</li>`;
+                                });
+                                modalContent += `</ul>`;
+                            }
+
+                            if (overallEligibility === 'Layak') {
+                                modalContent += `<div class="alert alert-success mt-3"><strong>Status: Pendonor Layak!</strong></div>`;
+                            } else {
+                                modalContent += `<div class="alert alert-danger mt-3"><strong>Status: Pendonor Tidak Layak!</strong></div>`;
+                                if (data.all_reasons) {
+                                    modalContent += `<div class="alert alert-warning mt-2"><strong>Alasan Tidak Layak:</strong><br>${data.all_reasons.replace(/\n/g, '<br>')}</div>`;
+                                }
+                            }
+
+                            modalContent += `
+                                <div class="mt-4">
+                                    <h6>Keputusan Petugas:</h6>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="keputusan_petugas" id="keputusanLanjut" value="Lanjut Donor" required>
+                                        <label class="form-check-label" for="keputusanLanjut">Lanjut Donor</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="keputusan_petugas" id="keputusanTidakLanjut" value="Tidak Lanjut" required>
+                                        <label class="form-check-label" for="keputusanTidakLanjut">Tidak Lanjut</label>
+                                    </div>
+                                    <div class="invalid-feedback d-block" id="keputusanPetugasFeedback"></div>
+                                </div>
+                                <div class="mt-3" id="catatanDokterContainer" style="display: none;">
+                                    <label for="catatanDokter" class="form-label">Catatan dari Dokter:</label>
+                                    <textarea class="form-control" id="catatanDokter" rows="3"></textarea>
+                                    <div class="invalid-feedback d-block" id="catatanDokterFeedback"></div>
+                                </div>
+                                <div class="mt-3" id="lanjutDonorContainer" style="display: none;">
+                                </div>
+                                <div class="mt-3">
+                                    <label for="petugas" class="form-label">Petugas:</label>
+                                    <select class="form-select" id="petugas" required>
+                                        <option value="">Pilih Petugas</option>
+                                        {% for petugas in all_petugas %}
+                                        <option value="{{ petugas.id }}">{{ petugas.nama }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="invalid-feedback d-block" id="petugasFeedback"></div>
+                                </div>
+                            `;
+
+                            finalVerifikasiBody.innerHTML = modalContent;
+
+                            const keputusanRadios = finalVerifikasiBody.querySelectorAll('input[name="keputusan_petugas"]');
+                            
+                            function toggleFinalFields() {
+                                const selectedKeputusan = finalVerifikasiBody.querySelector('input[name="keputusan_petugas"]:checked');
+                                const lanjutDonorContainer = document.getElementById('lanjutDonorContainer');
+                                const catatanDokterContainer = document.getElementById('catatanDokterContainer');
+                                const catatanDokterTextarea = document.getElementById('catatanDokter');
+
+                                if (selectedKeputusan) {
+                                    if (selectedKeputusan.value === 'Lanjut Donor') {
+                                        lanjutDonorContainer.style.display = 'block';
+                                        if (overallEligibility === 'Tidak Layak') {
+                                            catatanDokterContainer.style.display = 'block';
+                                            catatanDokterTextarea.setAttribute('required', 'required');
+                                        } else {
+                                            catatanDokterContainer.style.display = 'none';
+                                            catatanDokterTextarea.removeAttribute('required');
+                                        }
+                                    } else { // 'Tidak Lanjut'
+                                        lanjutDonorContainer.style.display = 'none';
+                                        catatanDokterContainer.style.display = 'none';
+                                        catatanDokterTextarea.removeAttribute('required');
+                                    }
+                                } else { // No decision made yet
+                                    lanjutDonorContainer.style.display = 'none';
+                                    catatanDokterContainer.style.display = 'none';
+                                    catatanDokterTextarea.removeAttribute('required');
+                                }
+                            }
+
+                            keputusanRadios.forEach(radio => {
+                                radio.addEventListener('change', toggleFinalFields);
+                            });
+
+                            toggleFinalFields();
+
+                            let saveFinalDecisionBtn = finalVerifikasiFooter.querySelector('#saveFinalDecisionBtn');
+                            if (!saveFinalDecisionBtn) {
+                                const existingSelesaiBtn = finalVerifikasiFooter.querySelector('button[data-bs-dismiss="modal"]');
+                                if (existingSelesaiBtn) {
+                                    existingSelesaiBtn.remove();
+                                }
+                                saveFinalDecisionBtn = document.createElement('button');
+                                saveFinalDecisionBtn.type = 'button';
+                                saveFinalDecisionBtn.classList.add('btn', 'btn-primary');
+                                saveFinalDecisionBtn.id = 'saveFinalDecisionBtn';
+                                finalVerifikasiFooter.appendChild(saveFinalDecisionBtn);
+                            }
+                            saveFinalDecisionBtn.textContent = 'Selesai';
+
+                            saveFinalDecisionBtn.onclick = function() {
+                                let finalFormIsValid = true;
+                                const selectedKeputusan = finalVerifikasiBody.querySelector('input[name="keputusan_petugas"]:checked');
+                                const keputusanPetugasValue = selectedKeputusan ? selectedKeputusan.value : '';
+                                const catatanDokterValue = document.getElementById('catatanDokter').value.trim();
+                                const petugasId = document.getElementById('petugas').value;
+
+                                // Clear previous feedback
+                                document.getElementById('keputusanPetugasFeedback').textContent = '';
+                                document.getElementById('catatanDokterFeedback').textContent = '';
+                                document.getElementById('petugasFeedback').textContent = '';
+                                document.getElementById('catatanDokter').classList.remove('is-invalid');
+                                document.getElementById('petugas').classList.remove('is-invalid');
+
+                                // General validations for any decision
+                                if (!keputusanPetugasValue) {
+                                    finalFormIsValid = false;
+                                    document.getElementById('keputusanPetugasFeedback').textContent = 'Pilihan keputusan petugas wajib diisi.';
+                                }
+                                
+                                if (!petugasId) {
+                                    finalFormIsValid = false;
+                                    document.getElementById('petugas').classList.add('is-invalid');
+                                    document.getElementById('petugasFeedback').textContent = 'Petugas wajib dipilih.';
+                                }
+
+                                // Validations specific to 'Lanjut Donor'
+                                if (keputusanPetugasValue === 'Lanjut Donor') {
+                                    if (overallEligibility === 'Tidak Layak' && !catatanDokterValue) {
+                                        finalFormIsValid = false;
+                                        document.getElementById('catatanDokter').classList.add('is-invalid');
+                                        document.getElementById('catatanDokterFeedback').textContent = 'Catatan dari dokter wajib diisi.';
+                                    }
+                                }
+
+                                if (finalFormIsValid) {
+                                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                                    const finalData = {
+                                        pendonor_id: pendonorToVerifyId,
+                                        keputusan_petugas: keputusanPetugasValue,
+                                        catatan_dokter: catatanDokterValue,
+                                        petugas_id: petugasId,
+                                        overall_eligibility: overallEligibility,
+                                        jenis_donasi: jenisDonasiValue, // Add stored value
+                                        jenis_donor: jenisDonorValue   // Add stored value
+                                    };
+
+                                    fetch(`/save-final-verifikasi/${pendonorToVerifyId}/`, {
+                                        method: 'POST',
+                                        headers: {
+                                            'X-CSRFToken': csrfToken,
+                                            'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify(finalData)
+                                    })
+                                    .then(response => response.json())
+                                    .then(result => {
+                                        if (result.success) {
+                                            finalVerifikasiModal.hide();
+                                            document.getElementById(`pendonor-${pendonorToVerifyId}`).remove();
+                                        } else {
+                                            alert('Error saving final decision: ' + JSON.stringify(result.errors));
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Fetch Error:', error);
+                                        alert('An error occurred while saving the final decision.');
+                                    });
+                                }
+                            };
+
+                            finalVerifikasiModal.show();
+                        } else {
+                            alert('Error saving verification data: ' + JSON.stringify(data.errors));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Fetch Error:', error);
+                        console.error('Error message:', error.message);
+                        console.error('Error stack:', error.stack);
+                        alert('An error occurred while saving verification data. Check console for details.');
+                    });
+                } else {
+                    const firstInvalid = verifikasiLanjutForm.querySelector('.is-invalid');
+                    if (firstInvalid) {
+                        firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            });
+        });
+    </script>
+{% endblock %}
