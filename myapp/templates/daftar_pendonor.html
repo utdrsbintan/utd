@@ -2,7 +2,7 @@
 
 {% block content %}
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">Data Pendonor UTD RSUD Kabupaten Bintan</h1>
+        <h6 class="fs-5 fw-bold">Data Pendonor UTD RSUD Kabupaten Bintan</h6>
         <div class="btn-toolbar mb-2 mb-md-0">
             <a href="{% url 'myapp:tambah_pendonor_lama' %}" class="btn btn-sm btn-outline-secondary">
                 <i class="bi bi-person-add"></i>
@@ -65,16 +65,16 @@
         <table class="table table-striped table-sm">
             <thead>
                 <tr>
-                    <th scope="col" class="text-center">No</th>
-                    <th scope="col" class="text-center">Nama</th>
-                    <th scope="col" class="text-center">Tanggal Lahir</th>
-                    <th scope="col" class="text-center">NIK</th>
-                    <th scope="col" class="text-center">Golongan Darah</th>
-                    <th scope="col" class="text-center">Rhesus</th>
-                    <th scope="col" class="text-center">No HP</th>
-                    <th scope="col" class="text-center">Tgl Terakhir Donor</th>
-                    <th scope="col" class="text-center">Riwayat Donor</th>
-                    <th scope="col" class="text-center">Aksi</th>
+                    <th scope="col" class="text-center align-middle">No</th>
+                    <th scope="col" class="text-center align-middle">Nama</th>
+                    <th scope="col" class="text-center align-middle">Tanggal Lahir</th>
+                    <th scope="col" class="text-center align-middle">NIK</th>
+                    <th scope="col" class="text-center align-middle">Golongan Darah</th>
+                    <th scope="col" class="text-center align-middle">Rhesus</th>
+                    <th scope="col" class="text-center align-middle">No HP</th>
+                    <th scope="col" class="text-center align-middle">Tgl Terakhir Donor</th>
+                    <th scope="col" class="text-center align-middle">Riwayat Donor</th>
+                    <th scope="col" class="text-center align-middle">Aksi</th>
                 </tr>
             </thead>
             <tbody id="pendonorTableBody">
@@ -94,6 +94,9 @@
                         </button>
                     </td>
                     <td class="text-center">
+                        <a href="{% url 'myapp:edit_pendonor' pendonor.id %}" class="btn btn-sm btn-info">
+                            <i class="bi bi-pencil"></i>
+                        </a>
                         <button type="button" class="btn btn-sm btn-danger delete-btn" data-bs-toggle="modal" data-bs-target="#deletePendonorModal" data-id="{{ pendonor.id }}">
                             <i class="bi bi-trash"></i>
                         </button>

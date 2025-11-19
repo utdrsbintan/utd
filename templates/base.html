@@ -21,12 +21,18 @@
         #main-content {
             flex: 1;
             display: flex;
+            flex-direction: column; /* Stack content and sidebar vertically on small screens */
         }
-        #sidebar {
-            width: 200px;
-            flex-shrink: 0;
-            background-color: white !important;
-            padding-top: 1rem;
+        @media (min-width: 992px) { /* Apply for large screens and up */
+            #main-content {
+                flex-direction: row; /* Sidebar and content side-by-side on large screens */
+            }
+            #sidebar {
+                width: 200px;
+                flex-shrink: 0;
+                background-color: white !important;
+                padding-top: 1rem;
+            }
         }
         #sidebar .list-group-item span {
             white-space: nowrap;
@@ -63,6 +69,9 @@
     <nav class="navbar navbar-expand-lg navbar-light fixed-top" style="background-color: #A52A2A;">
       <div class="container-fluid">
         <a class="navbar-brand" href="#">Unit Tranfusi Darah RSUD Kabupaten Bintan</a>
+        <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
@@ -70,7 +79,10 @@
           <ul class="navbar-nav ms-auto">
             {% block navbar_right_items %}
             <li class="nav-item">
-              <a class="nav-link" href="#">Logout</a>
+              <form action="{% url 'logout' %}" method="post" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="nav-link btn btn-link text-white" style="text-decoration: none;"><i class="bi bi-box-arrow-right"></i></button>
+              </form>
             </li>
             {% endblock navbar_right_items %}
           </ul>
@@ -78,9 +90,34 @@
       </div>
     </nav>
 
+    <div class="offcanvas offcanvas-start d-lg-none" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="offcanvasNavbarLabel">Menu</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body p-0">
+        <div id="sidebar" class="w-100">
+            <div class="list-group list-group-flush">
+                <a href="{% url 'myapp:dashboard' %}" class="list-group-item list-group-item-action py-2 ripple {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <i class="bi bi-speedometer me-3"></i><span>Dashboard</span>
+                </a>
+                <a href="{% url 'myapp:petugas' %}" class="list-group-item list-group-item-action py-2 ripple {% if request.resolver_match.url_name == 'petugas' %}active{% endif %}">
+                    <i class="bi bi-person-badge me-3"></i><span>Petugas</span>
+                </a>
+                <a href="{% url 'myapp:pendonor' %}" class="list-group-item list-group-item-action py-2 ripple {% if request.resolver_match.url_name == 'pendonor' or request.resolver_match.url_name == 'daftar_pendonor' %}active{% endif %}">
+                    <i class="bi bi-people me-3"></i><span>Pendonor</span>
+                </a>
+                <a href="{% url 'myapp:uji_saring' %}" class="list-group-item list-group-item-action py-2 ripple {% if request.resolver_match.url_name == 'uji_saring' %}active{% endif %}">
+                    <i class="bi bi-search me-3"></i><span>Uji Saring</span>
+                </a>
+            </div>
+        </div>
+      </div>
+    </div>
+
     <div id="main-content">
         {% block main_layout_block %}
-        <div id="sidebar">
+        <div id="sidebar" class="d-none d-lg-block">
             <div class="list-group">
                 <a href="{% url 'myapp:dashboard' %}" class="list-group-item list-group-item-action py-2 ripple {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
                     <i class="bi bi-speedometer me-3"></i><span>Dashboard</span>

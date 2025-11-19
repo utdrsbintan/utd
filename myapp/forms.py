@@ -1,5 +1,12 @@
 from django import forms
 from .models import Petugas, Pendonor, Verifikasi
+from django.contrib.auth.forms import AuthenticationForm # Import AuthenticationForm
+
+class CustomAuthenticationForm(AuthenticationForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['username'].widget.attrs.update({'placeholder': 'Username', 'class': 'form-control'})
+        self.fields['password'].widget.attrs.update({'placeholder': 'Password', 'class': 'form-control'})
 
 class PetugasForm(forms.ModelForm):
     class Meta:
@@ -14,8 +21,8 @@ class PetugasForm(forms.ModelForm):
 
 class PendonorForm(forms.ModelForm):
     tgl_donor_terakhir = forms.DateField(
-        required=False,
-        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        required=True,
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date', 'required': 'required'}),
         label="Tanggal Donor Terakhir",
     )
 
@@ -54,6 +61,18 @@ class PendonorForm(forms.ModelForm):
             'no_telepon': 'Nomor HP',
             'tgl_donor_terakhir': 'Tanggal Donor Terakhir',
         }
+
+    def clean_nik_ktp(self):
+        nik_ktp = self.cleaned_data['nik_ktp']
+        if not nik_ktp.isdigit():
+            raise forms.ValidationError("NIK KTP harus berupa angka.")
+        return nik_ktp
+
+    def clean_no_telepon(self):
+        no_telepon = self.cleaned_data['no_telepon']
+        if not no_telepon.isdigit():
+            raise forms.ValidationError("Nomor Telepon harus berupa angka.")
+        return no_telepon
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

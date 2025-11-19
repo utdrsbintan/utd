@@ -200,6 +200,25 @@
             // Initial call to set correct visibility on page load
             toggleStopCc();
         }
+
+        // --- Numeric Input Filtering ---
+        const nikKtpInput = document.getElementById('id_nik_ktp');
+        const noTeleponInput = document.getElementById('id_no_telepon');
+
+        function filterNumericInput(event) {
+            const input = event.target;
+            // Allow numbers, backspace, delete, tab, escape, enter, and arrow keys
+            if (!/^\d*$/.test(input.value)) {
+                input.value = input.value.replace(/\D/g, '');
+            }
+        }
+
+        if (nikKtpInput) {
+            nikKtpInput.addEventListener('input', filterNumericInput);
+        }
+        if (noTeleponInput) {
+            noTeleponInput.addEventListener('input', filterNumericInput);
+        }
     });
     </script>
 

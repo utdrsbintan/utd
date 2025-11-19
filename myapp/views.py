@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, Http404
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required # Import login_required
 from zoneinfo import ZoneInfo
 import datetime
 from django.utils import timezone
@@ -33,12 +34,15 @@ def welcome_page(request):
     }
     return render(request, 'welcome.html', context)
 
+@login_required
 def dashboard_view(request):
     return welcome_page(request)
 
+@login_required
 def uji_saring_view(request):
     return render(request, 'uji_saring.html')
 
+@login_required
 def pendonor_form_view(request):
     if request.method == 'POST':
         form = PendonorForm(request.POST)
@@ -49,17 +53,63 @@ def pendonor_form_view(request):
         form = PendonorForm()
     return render(request, 'pendonor_form.html', {'form': form})
 
+@login_required
 def edit_pendonor_view(request, pk):
     pendonor_instance = get_object_or_404(Pendonor, pk=pk)
-    if request.method == 'POST':
-        form = PendonorForm(request.POST, instance=pendonor_instance)
-        if form.is_valid():
-            pendonor = form.save()
-            return redirect('myapp:kuesioner', pendonor_id=pendonor.id)
-    else:
-        form = PendonorForm(instance=pendonor_instance)
-    return render(request, 'pendonor_form.html', {'form': form})
+    # Get the latest Verifikasi instance for this pendonor, or create a new one if none exists
+    verifikasi_instance, created = Verifikasi.objects.get_or_create(pendonor=pendonor_instance, is_verified=True, defaults={'keputusan_petugas': 'Lanjut Donor'})
 
+    if request.method == 'POST':
+        form = FullPendonorVerifikasiForm(request.POST)
+        if form.is_valid():
+            # Update Pendonor data
+            for field in PendonorForm.Meta.fields:
+                if field in form.cleaned_data:
+                    setattr(pendonor_instance, field, form.cleaned_data[field])
+            pendonor_instance.save()
+
+            # Update Verifikasi data
+            for field in [
+                'jenis_donasi', 'jenis_donor', 'hb_value', 'berat_badan', 'tensi',
+                'nomor_kantong', 'jenis_kantong', 'pengambilan', 'stop_cc',
+                'diambil_sebanyak', 'reaksi_donor',
+            ]:
+                if field in form.cleaned_data:
+                    setattr(verifikasi_instance, field, form.cleaned_data[field])
+            
+            # Handle petugas_aftap ForeignKey
+            petugas_aftap = form.cleaned_data.get('petugas_aftap')
+            if petugas_aftap:
+                verifikasi_instance.petugas_aftap = petugas_aftap
+                verifikasi_instance.petugas = petugas_aftap # Also set the main petugas for consistency
+                verifikasi_instance.nama_petugas = petugas_aftap.nama
+            
+            verifikasi_instance.save()
+
+            return redirect('myapp:daftar_pendonor')
+    else:
+        # Populate form with existing Pendonor and Verifikasi data
+        initial_data = {}
+        for field in PendonorForm.Meta.fields:
+            initial_data[field] = getattr(pendonor_instance, field)
+        for field in [
+            'jenis_donasi', 'jenis_donor', 'hb_value', 'berat_badan', 'tensi',
+            'nomor_kantong', 'jenis_kantong', 'pengambilan', 'stop_cc',
+            'diambil_sebanyak', 'reaksi_donor', 'petugas_aftap'
+        ]:
+            initial_data[field] = getattr(verifikasi_instance, field)
+
+        form = FullPendonorVerifikasiForm(initial=initial_data)
+    
+    all_petugas = Petugas.objects.all()
+    context = {
+        'form': form,
+        'pendonor': pendonor_instance,
+        'all_petugas': all_petugas,
+    }
+    return render(request, 'tambah_pendonor_lama.html', context)
+
+@login_required
 def kuesioner_view(request, pendonor_id):
     pendonor = get_object_or_404(Pendonor, id=pendonor_id)
     verifikasi, created = Verifikasi.objects.get_or_create(pendonor=pendonor)
@@ -118,6 +168,7 @@ def kuesioner_view(request, pendonor_id):
         form = KuesionerForm(instance=verifikasi)
     return render(request, 'kuesioner.html', {'form': form, 'pendonor': pendonor, 'verifikasi_id': verifikasi.id})
 
+@login_required
 def verifikasi_lanjut_view(request, verifikasi_id):
     verifikasi = get_object_or_404(Verifikasi, id=verifikasi_id)
     pendonor = verifikasi.pendonor # Get pendonor from verifikasi_instance
@@ -131,6 +182,7 @@ def verifikasi_lanjut_view(request, verifikasi_id):
         form = VerifikasiLanjutForm(instance=verifikasi)
     return render(request, 'verifikasi_lanjut.html', {'form': form, 'pendonor': pendonor})
 
+@login_required
 def pendonor(request):
     all_pendonor = Pendonor.objects.filter(Q(verifikasi__is_verified=False) | Q(verifikasi__isnull=True))
     # Search functionality
@@ -185,6 +237,7 @@ def pendonor(request):
     }
     return render(request, 'pendonor.html', context)
 
+@login_required
 @csrf_exempt
 def petugas(request):
     if request.method == 'POST':
@@ -213,6 +266,7 @@ def petugas(request):
     }
     return render(request, 'petugas.html', context)
 
+@login_required
 @csrf_exempt
 @require_POST
 def delete_petugas(request):
@@ -225,9 +279,11 @@ def delete_petugas(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
+@login_required
 def edit_petugas(request):
     pass
 
+@login_required
 @csrf_exempt
 @require_POST
 def delete_pendonor(request, pk):
@@ -242,6 +298,7 @@ def delete_pendonor(request, pk):
         traceback.print_exc()
         return JsonResponse({'success': False, 'error': f'Terjadi kesalahan pada server: {str(e)}'}, status=500)
 
+@login_required
 @csrf_exempt
 @require_POST
 def save_verifikasi_lanjut_data(request, pendonor_id):
@@ -328,6 +385,7 @@ def save_verifikasi_lanjut_data(request, pendonor_id):
 
 # ... (other views remain unchanged) ...
 
+@login_required
 def daftar_pendonor_view(request):
     # Base query
     base_query = Pendonor.objects.filter(verifikasi__is_verified=True)
@@ -414,6 +472,7 @@ def daftar_pendonor_view(request):
     }
     return render(request, 'daftar_pendonor.html', context)
 
+@login_required
 def riwayat_gagal_donor_view(request):
     # Base query on Verifikasi for failed donors
     base_query = Verifikasi.objects.filter(keputusan_petugas='Tidak Lanjut')
@@ -501,6 +560,7 @@ def riwayat_gagal_donor_view(request):
     }
     return render(request, 'riwayat_gagal_donor.html', context)
 
+@login_required
 @csrf_exempt
 @require_POST
 def save_final_verifikasi(request, pendonor_id):
@@ -557,6 +617,7 @@ def save_final_verifikasi(request, pendonor_id):
         # Return a generic error message to the client
         return JsonResponse({'success': False, 'errors': {'__all__': [f'Terjadi kesalahan pada server: {str(e)}']}}, status=500)
 
+@login_required
 @csrf_exempt
 @require_POST
 def save_aftap_data(request, verifikasi_id):
@@ -635,6 +696,7 @@ from reportlab.lib.units import inch
 from reportlab.lib.enums import TA_CENTER
 from reportlab.platypus import PageBreak # Add this import
 
+@login_required
 def generate_donor_pdf(request, verifikasi_id):
     verifikasi = get_object_or_404(Verifikasi, id=verifikasi_id)
     pendonor = verifikasi.pendonor
@@ -1038,6 +1100,7 @@ def generate_donor_pdf(request, verifikasi_id):
     doc.build(story, onFirstPage=my_header, onLaterPages=my_header)
     return response
 
+@login_required
 @csrf_exempt
 def get_donor_history(request, nik_ktp):
     pendonor_list = Pendonor.objects.filter(nik_ktp=nik_ktp)
@@ -1156,6 +1219,7 @@ def get_donor_history(request, nik_ktp):
 
     return JsonResponse(response_data)
 
+@login_required
 def panggil_pendonor_view(request):
     seventy_five_days_ago = timezone.now().date() - timedelta(days=75)
 
@@ -1189,6 +1253,7 @@ def panggil_pendonor_view(request):
     }
     return render(request, 'panggil_pendonor.html', context)
 
+@login_required
 def tambah_pendonor_lama_view(request):
     if request.method == 'POST':
         form = FullPendonorVerifikasiForm(request.POST)
